@@ -25,7 +25,7 @@ const App = () => {
 
     const fetchBatch = async (batch) => {
       try {
-        const res  = await fetch(`http://localhost:3001/api/batch?symbols=${batch.join(',')}`);
+        const res  = await fetch(`/api/batch?symbols=${batch.join(',')}`);
         const data = await res.json();
         data.forEach(item => {
           if (!item.error && item.price != null) {
@@ -59,7 +59,7 @@ const App = () => {
   const fetchLiveFromProxy = async (symbol) => {
     setIsRefreshing(prev => ({ ...prev, [symbol]: true }));
     try {
-      const response = await fetch(`http://localhost:3001/api/stock/${symbol}`);
+      const response = await fetch(`/api/stock?symbol=${symbol}`);
       const data = await response.json();
       if (data.price) {
         setStocks(prev => prev.map(s => s.symbol === symbol ? {
@@ -333,7 +333,7 @@ function StockAnalyticsModal({ stock, onClose }) {
   useEffect(() => {
     setNewsLoading(true);
     setNews([]);
-    fetch(`http://localhost:3001/api/news/${stock.symbol}`)
+    fetch(`/api/news?symbol=${stock.symbol}`)
       .then(r => r.json())
       .then(data => { setNews(Array.isArray(data) ? data : []); })
       .catch(() => setNews([]))
