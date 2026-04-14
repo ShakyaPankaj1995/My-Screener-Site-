@@ -385,8 +385,6 @@ function StockAnalyticsModal({ stock, onClose }) {
         </div>
 
         <div className="ma-body">
-
-          {/* ─ Left col ─ */}
           <div className="ma-left">
             <div className="ma-panel">
               <div className="ma-panel-title">📊 Key Statistics</div>
@@ -410,7 +408,7 @@ function StockAnalyticsModal({ stock, onClose }) {
             </div>
 
             <div className="ma-panel">
-              <div className="ma-panel-title">📁 Financial Highlights (FY25)</div>
+              <div className="ma-panel-title">📁 Financial Highlights</div>
               <div className="fin-highlights">
                 {[
                   ['Total Assets',      `₹${stats.totalAssets}L Cr`, ''],
@@ -424,82 +422,43 @@ function StockAnalyticsModal({ stock, onClose }) {
                   </React.Fragment>
                 ))}
               </div>
-              <div className="key-ratios">
-                <div className="kr-label">KEY RATIOS</div>
-                {[
-                  ['Debt to Equity', stats.debtEquity, ''],
-                  ['Cash Balance',   `₹${stats.cashBal}L Cr`, 'up'],
-                  ['EPS',            `₹${stats.eps}`,         ''],
-                  ['ROE',            `${stats.roe}%`,         'up'],
-                ].map(([label, val, cls]) => (
-                  <div className="kr-row" key={label}>
-                    <span>{label}</span><span className={`kr-val ${cls}`}>{val}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
-          {/* ─ Right col ─ */}
           <div className="ma-right">
             <div className="ma-panel ai-signals-panel">
               <div className="ma-panel-title">🤖 AI Market Signals & Technicals</div>
-              
-              {/* TradingView Technical Gauge Widget */}
-              <div className="tv-widget-container">
-                 <TradingViewTechnicalWidget symbol={stock.symbol} />
-              </div>
-
+              <div className="tv-widget-container"><TradingViewTechnicalWidget symbol={stock.symbol} /></div>
               {[signals.week, signals.month, signals.year].map((sig, i) => (
                 <div key={i} className="signal-row">
                   <div className="sig-top">
                     <span className="sig-label">{sig.label}</span>
-                    <span className={`sig-dir ${sig.dir === 'Bullish' ? 'up' : sig.dir === 'Bearish' ? 'down' : 'neutral-tag'}`}>
-                      {sig.dir}
-                    </span>
+                    <span className={`sig-dir ${sig.dir === 'Bullish' ? 'up' : sig.dir === 'Bearish' ? 'down' : 'neutral-tag'}`}>{sig.dir}</span>
                   </div>
-                  <div className="sig-bar-bg">
-                    <div className="sig-bar-fill" style={{
-                      width: `${sig.conf}%`,
-                      background: sig.dir === 'Bullish' ? 'var(--accent-up)' : sig.dir === 'Bearish' ? 'var(--accent-down)' : '#f59e0b'
-                    }}></div>
-                  </div>
+                  <div className="sig-bar-bg"><div className="sig-bar-fill" style={{ width: `${sig.conf}%`, background: sig.dir === 'Bullish' ? 'var(--accent-up)' : 'var(--accent-down)' }}></div></div>
                   <span className="sig-conf">{sig.conf}% confidence</span>
                 </div>
               ))}
               <p className="sig-summary">{signals.summary}</p>
             </div>
-
             <div className="ma-panel">
               <div className="ma-panel-title">📰 News Sentiment & Impact</div>
-              {newsLoading && (
-                <div className="news-loading">⟳ Fetching latest news for {stock.symbol}…</div>
-              )}
-              {!newsLoading && news.length === 0 && (
-                <div className="news-loading">No recent news found. Check <a href={`https://news.google.com/search?q=${encodeURIComponent(stock.name+' NSE')}`} target="_blank" rel="noreferrer" className="ma-tag-link">Google News ↗</a></div>
-              )}
+              {newsLoading && <div className="news-loading">⟳ Fetching News...</div>}
               {news.map((n, i) => (
                 <div key={i} className="news-item">
-                  <div className="news-meta">
-                    <span className="news-source">{n.source}</span>
-                    {n.pubDate && <span className="news-time">{n.pubDate}</span>}
-                  </div>
-                  <a href={n.link} target="_blank" rel="noreferrer" className="news-headline-link">
-                    <p className="news-headline">{n.title} ↗</p>
-                  </a>
+                  <div className="news-meta"><span className="news-source">{n.source}</span></div>
+                  <a href={n.link} target="_blank" rel="noreferrer" className="news-headline-link"><p className="news-headline">{n.title} ↗</p></a>
                 </div>
               ))}
             </div>
-
           </div>
         </div>
-            <span className="version">v2.4.0-pro</span>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
-};
+}
+
+export default App;
 
 // ── Technical Widgets ────────────────────────────────────────────────────────
 
