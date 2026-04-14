@@ -475,10 +475,28 @@ function StockAnalyticsModal({ stock, onClose }) {
 
           </div>
         </div>
-      </div>
+      </main>
+
+      <footer className="main-footer glass animate-fade">
+        <div className="footer-content">
+          <div className="footer-section">
+            <div className="footer-logo">💠 StockPulse</div>
+            <p className="disclaimer">
+              Disclaimer: Technical analysis and AI signals are for educational purposes only. 
+              Stock market investments are subject to market risks. Always consult a financial advisor.
+            </p>
+          </div>
+          <div className="footer-divider"></div>
+          <div className="footer-bottom">
+            <span className="source-tag">Data Source: Official NSE India</span>
+            <span className="author-tag">Built with ❤️ by Pankaj Shakya</span>
+            <span className="version">v2.4.0-pro</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
-}
+};
 
 // ── Technical Widgets ────────────────────────────────────────────────────────
 
