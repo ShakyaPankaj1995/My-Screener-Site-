@@ -458,8 +458,6 @@ function StockAnalyticsModal({ stock, onClose }) {
   );
 }
 
-export default App;
-
 // ── Technical Widgets ────────────────────────────────────────────────────────
 
 function TradingViewTechnicalWidget({ symbol }) {
