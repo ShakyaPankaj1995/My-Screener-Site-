@@ -1032,3 +1032,34 @@ a.panel-source-link:hover { color: var(--primary); text-decoration: underline; }
 @keyframes ticker-slide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 .ticker-item { display: flex; align-items: center; gap: 12px; padding: 0 30px; font-size: 0.85rem; font-weight: 600; border-right: 1px solid rgba(255, 255, 255, 0.1); }
 .ticker-symbol { color: var(--text-muted); } .ticker-price { color: #fff; } .ticker-chg.up { color: var(--accent-up); } .ticker-chg.down { color: var(--accent-down); }
+
+/* --- Mobile Responsive Optimizations --- */
+@media (max-width: 768px) {
+  .app-container { padding: 1rem 0.5rem; }
+  .main-header { flex-direction: column; gap: 1.5rem; padding: 1.5rem 1rem; text-align: center; }
+  .logo { flex-direction: column; gap: 5px; }
+  .logo h1 { font-size: 1.4rem; }
+  .logo-suffix { display: block; margin-left: 0; }
+  .logo-author { border-left: none; margin-left: 0; padding-left: 0; display: block; width: 100%; }
+
+  .controls-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .search-box input { padding: 1rem 2rem 1rem 3rem; }
+
+  .table-container { border-radius: 12px; margin: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .stocks-table { min-width: 800px; }
+
+  .modal-analytics { width: 95%; height: 90vh; padding: 1.5rem; border-radius: 20px; }
+  .ma-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .ma-price-block { width: 100%; justify-content: space-between; display: flex; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; }
+  .ma-body { grid-template-columns: 1fr; }
+  .ma-panel { padding: 1.2rem; }
+  .tech-data-grid { grid-template-columns: 1fr; }
+
+  .ticker-item { padding: 0 15px; font-size: 0.75rem; }
+  .ticker-tape { height: 36px; }
+  .btn-sync-all { width: 100%; justify-content: center; }
+  .live-status { width: 100%; justify-content: center; }
+  .pagination { flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+  .pagination-btn { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
+}
+
