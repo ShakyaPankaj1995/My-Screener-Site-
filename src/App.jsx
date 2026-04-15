@@ -80,13 +80,23 @@ const App = () => {
   // --- Persistence Logic ---
   useEffect(() => {
     const saved = localStorage.getItem('stockpulse_data');
+    const staticList = generateNifty500();
+    
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setStocks(parsed);
+          // Merge logic: Start with the static list, but update details from saved if symbol matches
+          const merged = staticList.map(s => {
+            const savedItem = parsed.find(p => p.symbol === s.symbol);
+            return savedItem ? { ...s, ...savedItem } : s;
+          });
+          setStocks(merged);
         }
-      } catch (e) { console.error("Persistence Load Error", e); }
+      } catch (e) { 
+        console.error("Persistence Load Error", e);
+        setStocks(staticList);
+      }
     }
   }, []);
 
