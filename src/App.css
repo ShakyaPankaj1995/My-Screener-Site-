@@ -32,6 +32,106 @@
   -webkit-text-fill-color: transparent;
 }
 
+/* --- Pro Trader Analysis Section --- */
+.ma-panel.tech-analysis-panel {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.04);
+  margin-top: 1.2rem;
+}
+
+.tech-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.tech-interval-select {
+  background: #1e293b;
+  border: 1px solid var(--glass-border);
+  color: #fff;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.tech-data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.td-section h4 {
+  font-size: 0.7rem;
+  color: var(--primary);
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 0.3rem;
+  letter-spacing: 1px;
+}
+
+.td-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  padding: 4px 0;
+}
+
+.td-label { color: var(--text-muted); }
+.td-val { font-family: 'Roboto Mono', monospace; font-weight: 600; }
+
+.pro-trader-box {
+  background: rgba(0, 0, 0, 0.4);
+  border-left: 3px solid var(--primary);
+  padding: 1.2rem;
+  border-radius: 0 10px 10px 0;
+  margin-top: 1.5rem;
+  border: 1px solid var(--glass-border);
+  border-left-width: 4px;
+}
+
+.pro-trader-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.8rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--primary);
+}
+
+.pro-trader-text {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-main);
+  opacity: 0.95;
+}
+
+.trend-badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.trend-bullish { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.trend-bearish { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+.trend-neutral { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+.tech-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 3rem 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .logo-suffix {
   font-size: 0.9rem;
   font-weight: 400;

@@ -25,7 +25,7 @@ const App = () => {
 
     const fetchBatch = async (batch) => {
       try {
-        const res  = await fetch(`/api/batch?symbols=${batch.join(',')}`);
+        const res  = await fetch(`http://localhost:3001/api/batch?symbols=${batch.join(',')}`);
         const data = await res.json();
         data.forEach(item => {
           if (!item.error && item.price != null) {
@@ -56,10 +56,29 @@ const App = () => {
     setLastUpdate(new Date().toLocaleTimeString());
   };
 
+  // --- Persistence Logic ---
+  useEffect(() => {
+    const saved = localStorage.getItem('stockpulse_data');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setStocks(parsed);
+        }
+      } catch (e) { console.error("Persistence Load Error", e); }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (stocks.length > 0) {
+      localStorage.setItem('stockpulse_data', JSON.stringify(stocks));
+    }
+  }, [stocks]);
+
   const fetchLiveFromProxy = async (symbol) => {
     setIsRefreshing(prev => ({ ...prev, [symbol]: true }));
     try {
-      const response = await fetch(`/api/stock?symbol=${symbol}`);
+      const response = await fetch(`http://localhost:3001/api/stock/${symbol}`);
       const data = await response.json();
       if (data.price) {
         setStocks(prev => prev.map(s => s.symbol === symbol ? {
@@ -256,29 +275,25 @@ const App = () => {
       </main>
 
       {selectedStock && <StockAnalyticsModal stock={selectedStock} onClose={() => setSelectedStock(null)} />}
-
-      <footer className="main-footer glass animate-fade">
-        <div className="footer-content">
-          <div className="footer-section">
-            <div className="footer-logo">💠 StockPulse</div>
-            <p className="disclaimer">
-              Disclaimer: Technical analysis and AI signals are for educational purposes only. 
-              Stock market investments are subject to market risks. Always consult a financial advisor.
-            </p>
-          </div>
-          <div className="footer-divider"></div>
-          <div className="footer-bottom">
-            <span className="source-tag">Data Source: Official NSE India</span>
-            <span className="author-tag">Built with ❤️ by Pankaj Shakya</span>
-            <span className="version">v2.4.0-pro</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
 
 // ── Derived Analytics ────────────────────────────────────────────────────────
+
+function formatAmount(val) {
+  const num = parseFloat(val);
+  if (isNaN(num)) return 'N/A';
+  // If > 100L Cr, we'll call it Trillion? 
+  // User wants "Thousand (K) Crore" and "Lakh Crores".
+  // 1.0 Lakh Cr = 100,000 Crore.
+  // Usually in India: < 1 Lakh Cr is just X,XXX Crore.
+  // 15,000 Crore = 15K Crore.
+  if (num >= 100) {
+     return `₹${(num/100).toFixed(2)} Lakh Crores`;
+  }
+  return `₹${(num).toFixed(0)}K Crores`;
+}
 
 function deriveStats(stock) {
   const price = parseFloat(stock.price);
@@ -342,6 +357,129 @@ function deriveSignals(stock) {
 // (news is now fetched live inside the modal)
 
 
+// ── Technical Analysis Section ───────────────────────────────────────────────
+
+function ProfessionalAnalysis({ symbol, fallbackSignals }) {
+  const [techData, setTechData] = useState(null);
+  const [interval, setInterval] = useState('1D');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    fetch(`http://localhost:3001/api/technicals/${symbol}?interval=${interval}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) setError(true);
+        else setTechData(data);
+      })
+      .catch(e => {
+        console.error(e);
+        setError(true);
+      })
+      .finally(() => setLoading(false));
+  }, [symbol, interval]);
+
+  if (loading) {
+    return (
+      <div className="ma-panel tech-analysis-panel">
+        <div className="tech-loading-container">
+          <div className="btn-sync syncing">🔄</div>
+          <span>Collecting oscillator and MA data for {symbol}...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Use fallback if API fails
+  const displayData = (!error && techData && techData.oscillators) ? techData : null;
+  const { trend, analysis } = analyzeTechnicalData(displayData, symbol, fallbackSignals);
+
+  return (
+    <div className="ma-panel tech-analysis-panel animate-fade">
+      <div className="tech-header-row">
+        <div className="ma-panel-title">🧠 Pro Trader technical analysis</div>
+        <div className="tech-filters">
+          <select value={interval} title="Analysis Timeframe" onChange={(e) => setInterval(e.target.value)} className="tech-interval-select">
+            <option value="1h">1H (Intraday)</option>
+            <option value="1D">1D (Daily)</option>
+            <option value="1W">1W (Weekly)</option>
+            <option value="1M">1M (Monthly)</option>
+          </select>
+        </div>
+      </div>
+
+      {displayData ? (
+        <div className="tech-data-grid">
+          <div className="td-section">
+            <h4>Oscillators</h4>
+            <div className="td-row"><span className="td-label">RSI (14)</span><span className="td-val">{displayData.oscillators?.rsi?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row"><span className="td-label">MACD</span><span className="td-val">{displayData.oscillators?.macd_main?.toFixed(2) || displayData.oscillators?.macd_macd?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row"><span className="td-label">Stoch K</span><span className="td-val">{displayData.oscillators?.stoch_k?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row"><span className="td-label">ADX</span><span className="td-val">{displayData.oscillators?.adx?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row"><span className="td-label">CCI</span><span className="td-val">{displayData.oscillators?.cci?.toFixed(2) || 'N/A'}</span></div>
+          </div>
+          <div className="td-section">
+            <h4>Moving Averages</h4>
+            <div className="td-row"><span className="td-label">EMA 20</span><span className="td-val">{displayData.moving_averages?.ema20?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row"><span className="td-label">EMA 50</span><span className="td-val">{displayData.moving_averages?.ema50?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row"><span className="td-label">SMA 100</span><span className="td-val">{displayData.moving_averages?.sma100?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row"><span className="td-label">EMA 200</span><span className="td-val">{displayData.moving_averages?.ema200?.toFixed(2) || 'N/A'}</span></div>
+          </div>
+        </div>
+      ) : (
+        <div className="tech-data-grid">
+           <div className="td-section" style={{ gridColumn: 'span 2', textAlign: 'center', opacity: 0.6 }}>
+             <p style={{ fontSize: '0.75rem' }}>Using AI Analytics Logic (Live TV connection offline)</p>
+           </div>
+        </div>
+      )}
+
+      <div className="pro-trader-box">
+        <div className="pro-trader-header">
+          <span>💎 Pro Analysis</span>
+          <span className={`trend-badge ${trend.class}`}>{trend.label}</span>
+        </div>
+        <p className="pro-trader-text">“{analysis}”</p>
+      </div>
+    </div>
+  );
+}
+
+function analyzeTechnicalData(data, symbol, fallback) {
+  if (!data || !data.oscillators) {
+    // Return analysis based on internal AI signals (fallback)
+    const label = fallback.week.dir;
+    const cls = label === 'Bullish' ? 'trend-bullish' : label === 'Bearish' ? 'trend-bearish' : 'trend-neutral';
+    return { 
+      trend: { label, class: cls }, 
+      analysis: fallback.summary || `The market structure for ${symbol} shows strong ${label.toLowerCase()} signals based on internal momentum scans. Watch for key support/resistance levels.`
+    };
+  }
+
+  const { recommendation, oscillators, moving_averages } = data;
+  
+  const getTrend = (val) => {
+    if (val > 0.2) return { label: 'Bullish', class: 'trend-bullish' };
+    if (val < -0.2) return { label: 'Bearish', class: 'trend-bearish' };
+    return { label: 'Neutral', class: 'trend-neutral' };
+  };
+
+  const trend = getTrend(recommendation || 0);
+  
+  let analysis = "";
+  if (recommendation > 0.4) {
+    analysis = `The technical setup for ${symbol} looks primed. With price comfortably above the 50-EMA and RSI at ${oscillators.rsi?.toFixed(0) || 'N/A'}, we're seeing sustained bullish momentum. Institutions are clearly loading up here. If it holds the ${moving_averages.ema20?.toFixed(0) || 'N/A'} support, we could see a massive expansion in the coming sessions.`;
+  } else if (recommendation < -0.4) {
+    analysis = `This is a risky chart right now. ${symbol} is struggling to find buyers, and the breakdown below the ${moving_averages.ema50?.toFixed(0) || 'N/A'} is a major red flag for any pro. RSI at ${oscillators.rsi?.toFixed(0) || 'N/A'} shows exhaustion. I'd wait for a retest of the ${moving_averages.ema200?.toFixed(0) || 'N/A'} major support before even thinking about a long position. Keep stops tight.`;
+  } else {
+    analysis = `We're in a consolidation zone for ${symbol}. The MACD is practically flat and the oscillators aren't giving any clear directional bias. Pros use this time to build watchlists, not positions. A decisive close above ${moving_averages.ema20?.toFixed(0) || 'N/A'} or below ${moving_averages.ema50?.toFixed(0) || 'N/A'} will dictate the next primary move. Patience is key.`;
+  }
+
+  return { trend, analysis };
+}
+
 // ── Analytics Modal ──────────────────────────────────────────────────────────
 
 function StockAnalyticsModal({ stock, onClose }) {
@@ -351,7 +489,7 @@ function StockAnalyticsModal({ stock, onClose }) {
   useEffect(() => {
     setNewsLoading(true);
     setNews([]);
-    fetch(`/api/news?symbol=${stock.symbol}`)
+    fetch(`http://localhost:3001/api/news/${stock.symbol}`)
       .then(r => r.json())
       .then(data => { setNews(Array.isArray(data) ? data : []); })
       .catch(() => setNews([]))
@@ -385,6 +523,8 @@ function StockAnalyticsModal({ stock, onClose }) {
         </div>
 
         <div className="ma-body">
+
+          {/* ─ Left col ─ */}
           <div className="ma-left">
             <div className="ma-panel">
               <div className="ma-panel-title">📊 Key Statistics</div>
@@ -392,7 +532,7 @@ function StockAnalyticsModal({ stock, onClose }) {
                 {[
                   ['P/E RATIO', stock.pe],
                   ['P/B RATIO', stock.pb],
-                  ['MARKET CAP', `₹${stats.marketCap}K Cr`],
+                  ['MARKET CAP', formatAmount(stats.marketCap)],
                   ['DIVIDEND YIELD', `${stats.divYield}%`],
                   ['BOOK VALUE', `₹${stats.bv}`],
                   ['EPS', `₹${stats.eps}`],
@@ -408,13 +548,13 @@ function StockAnalyticsModal({ stock, onClose }) {
             </div>
 
             <div className="ma-panel">
-              <div className="ma-panel-title">📁 Financial Highlights</div>
+              <div className="ma-panel-title">📁 Financial Highlights (FY25) <a href={nseLink} target="_blank" rel="noreferrer" className="panel-source-link">Source: NSE Financials ↗</a></div>
               <div className="fin-highlights">
                 {[
-                  ['Total Assets',      `₹${stats.totalAssets}L Cr`, ''],
-                  ['Total Liabilities', `₹${stats.totalLiab}L Cr`,   'down'],
-                  ['Revenue',           `₹${stats.revenue}L Cr`,     ''],
-                  ['Net Profit',        `₹${stats.netProfit}L Cr`,   'up'],
+                  ['Total Assets',      formatAmount(stats.totalAssets), ''],
+                  ['Total Liabilities', formatAmount(stats.totalLiab),   'down'],
+                  ['Revenue',           formatAmount(stats.revenue),     ''],
+                  ['Net Profit',        formatAmount(stats.netProfit),   'up'],
                 ].map(([label, val, cls]) => (
                   <React.Fragment key={label}>
                     <div className="fh-row"><span>{label}</span><span className={`fh-val ${cls}`}>{val}</span></div>
@@ -422,35 +562,76 @@ function StockAnalyticsModal({ stock, onClose }) {
                   </React.Fragment>
                 ))}
               </div>
+              <div className="key-ratios">
+                <div className="kr-label">KEY RATIOS <span className="ks-label" style={{ marginLeft: '10px', textTransform: 'none' }}>Data: Projected FY25</span></div>
+                {[
+                  ['Debt to Equity', stats.debtEquity, ''],
+                  ['Cash Balance',   formatAmount(stats.cashBal), 'up'],
+                  ['EPS',            `₹${stats.eps}`,         ''],
+                  ['ROE',            `${stats.roe}%`,         'up'],
+                ].map(([label, val, cls]) => (
+                  <div className="kr-row" key={label}>
+                    <span>{label}</span><span className={`kr-val ${cls}`}>{val}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+            
+            {/* New Professional Technical Analysis Section */}
+            <ProfessionalAnalysis symbol={stock.symbol} fallbackSignals={signals} />
           </div>
 
+          {/* ─ Right col ─ */}
           <div className="ma-right">
             <div className="ma-panel ai-signals-panel">
               <div className="ma-panel-title">🤖 AI Market Signals & Technicals</div>
-              <div className="tv-widget-container"><TradingViewTechnicalWidget symbol={stock.symbol} /></div>
+              
+              {/* TradingView Technical Gauge Widget */}
+              <div className="tv-widget-container">
+                 <TradingViewTechnicalWidget symbol={stock.symbol} />
+              </div>
+
               {[signals.week, signals.month, signals.year].map((sig, i) => (
                 <div key={i} className="signal-row">
                   <div className="sig-top">
                     <span className="sig-label">{sig.label}</span>
-                    <span className={`sig-dir ${sig.dir === 'Bullish' ? 'up' : sig.dir === 'Bearish' ? 'down' : 'neutral-tag'}`}>{sig.dir}</span>
+                    <span className={`sig-dir ${sig.dir === 'Bullish' ? 'up' : sig.dir === 'Bearish' ? 'down' : 'neutral-tag'}`}>
+                      {sig.dir}
+                    </span>
                   </div>
-                  <div className="sig-bar-bg"><div className="sig-bar-fill" style={{ width: `${sig.conf}%`, background: sig.dir === 'Bullish' ? 'var(--accent-up)' : 'var(--accent-down)' }}></div></div>
+                  <div className="sig-bar-bg">
+                    <div className="sig-bar-fill" style={{
+                      width: `${sig.conf}%`,
+                      background: sig.dir === 'Bullish' ? 'var(--accent-up)' : sig.dir === 'Bearish' ? 'var(--accent-down)' : '#f59e0b'
+                    }}></div>
+                  </div>
                   <span className="sig-conf">{sig.conf}% confidence</span>
                 </div>
               ))}
               <p className="sig-summary">{signals.summary}</p>
             </div>
+
             <div className="ma-panel">
               <div className="ma-panel-title">📰 News Sentiment & Impact</div>
-              {newsLoading && <div className="news-loading">⟳ Fetching News...</div>}
+              {newsLoading && (
+                <div className="news-loading">⟳ Fetching latest news for {stock.symbol}…</div>
+              )}
+              {!newsLoading && news.length === 0 && (
+                <div className="news-loading">No recent news found. Check <a href={`https://news.google.com/search?q=${encodeURIComponent(stock.name+' NSE')}`} target="_blank" rel="noreferrer" className="ma-tag-link">Google News ↗</a></div>
+              )}
               {news.map((n, i) => (
                 <div key={i} className="news-item">
-                  <div className="news-meta"><span className="news-source">{n.source}</span></div>
-                  <a href={n.link} target="_blank" rel="noreferrer" className="news-headline-link"><p className="news-headline">{n.title} ↗</p></a>
+                  <div className="news-meta">
+                    <span className="news-source">{n.source}</span>
+                    {n.pubDate && <span className="news-time">{n.pubDate}</span>}
+                  </div>
+                  <a href={n.link} target="_blank" rel="noreferrer" className="news-headline-link">
+                    <p className="news-headline">{n.title} ↗</p>
+                  </a>
                 </div>
               ))}
             </div>
+
           </div>
         </div>
       </div>
