@@ -1025,3 +1025,10 @@ a.panel-source-link:hover { color: var(--primary); text-decoration: underline; }
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Ticker Tape */
+.ticker-tape { width: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); height: 44px; overflow: hidden; position: relative; z-index: 1001; }
+.ticker-scroll { display: flex; width: max-content; animation: ticker-slide 60s linear infinite; height: 100%; align-items: center; }
+@keyframes ticker-slide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.ticker-item { display: flex; align-items: center; gap: 12px; padding: 0 30px; font-size: 0.85rem; font-weight: 600; border-right: 1px solid rgba(255, 255, 255, 0.1); }
+.ticker-symbol { color: var(--text-muted); } .ticker-price { color: #fff; } .ticker-chg.up { color: var(--accent-up); } .ticker-chg.down { color: var(--accent-down); }

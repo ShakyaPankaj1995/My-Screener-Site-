@@ -5,6 +5,25 @@ import './App.css';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // ── Main App ─────────────────────────────────────────────────────────────────
+function TickerTape({ stocks }) {
+  const topGainers = [...stocks].sort((a,b) => b.change - a.change).slice(0, 15);
+  return (
+    <div className="ticker-tape">
+      <div className="ticker-scroll">
+        {[...topGainers, ...topGainers].map((s, i) => (
+          <div key={i} className="ticker-item">
+            <span className="ticker-symbol">{s.symbol}</span>
+            <span className="ticker-price">₹{s.price}</span>
+            <span className={`ticker-chg ${parseFloat(s.change) >=0 ? 'up':'down'}`}>
+               {parseFloat(s.change) >=0 ? '▲' : '▼'} {Math.abs(s.change)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const App = () => {
   const [stocks, setStocks] = useState(generateNifty500());
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,6 +160,7 @@ const App = () => {
 
   return (
     <div className="app-container">
+      <TickerTape stocks={stocks} />
       <header className="main-header glass animate-fade">
         <div className="logo">
           <span className="logo-icon">💠</span>
