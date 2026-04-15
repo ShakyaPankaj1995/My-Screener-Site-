@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { generateNifty500 } from './data';
 import './App.css';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 // ── Main App ─────────────────────────────────────────────────────────────────
 const App = () => {
   const [stocks, setStocks] = useState(generateNifty500());
@@ -25,7 +27,7 @@ const App = () => {
 
     const fetchBatch = async (batch) => {
       try {
-        const res  = await fetch(`http://localhost:3001/api/batch?symbols=${batch.join(',')}`);
+        const res  = await fetch(`${API_BASE}/api/batch?symbols=${batch.join(',')}`);
         const data = await res.json();
         data.forEach(item => {
           if (!item.error && item.price != null) {
@@ -78,7 +80,7 @@ const App = () => {
   const fetchLiveFromProxy = async (symbol) => {
     setIsRefreshing(prev => ({ ...prev, [symbol]: true }));
     try {
-      const response = await fetch(`http://localhost:3001/api/stock/${symbol}`);
+      const response = await fetch(`${API_BASE}/api/stock/${symbol}`);
       const data = await response.json();
       if (data.price) {
         setStocks(prev => prev.map(s => s.symbol === symbol ? {
@@ -368,7 +370,7 @@ function ProfessionalAnalysis({ symbol, fallbackSignals }) {
   useEffect(() => {
     setLoading(true);
     setError(false);
-    fetch(`http://localhost:3001/api/technicals/${symbol}?interval=${interval}`)
+    fetch(`${API_BASE}/api/technicals/${symbol}?interval=${interval}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) setError(true);
@@ -489,7 +491,7 @@ function StockAnalyticsModal({ stock, onClose }) {
   useEffect(() => {
     setNewsLoading(true);
     setNews([]);
-    fetch(`http://localhost:3001/api/news/${stock.symbol}`)
+    fetch(`${API_BASE}/api/news/${stock.symbol}`)
       .then(r => r.json())
       .then(data => { setNews(Array.isArray(data) ? data : []); })
       .catch(() => setNews([]))
