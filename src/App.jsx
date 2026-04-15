@@ -227,7 +227,7 @@ const App = () => {
 
         <section className="table-container animate-fade">
           <div className="glass table-wrapper">
-            <table className="stocks-table">
+            <table>
               <thead>
                 <tr>
                   <th style={{ width: '40px' }}></th>
@@ -246,30 +246,41 @@ const App = () => {
               <tbody>
                 {paginatedStocks.map((stock) => {
                   const change = parseFloat(stock.change) || 0;
+                  const nseLink = `https://www.nseindia.com/get-quote/equity/${stock.nseSlug || stock.symbol}`;
                   return (
-                    <tr key={stock.symbol} className="table-row animate-fade">
-                      <td className="td-refresh">
-                        <button className="btn-refresh-sm" onClick={() => fetchLiveFromProxy(stock.symbol)}>
-                          {isRefreshing[stock.symbol] ? '⏳' : '🔄'}
-                        </button>
+                    <tr key={stock.symbol} className="table-row">
+                      <td>
+                        <button className={`btn-sync ${isRefreshing[stock.symbol] ? 'syncing' : ''}`}
+                          onClick={() => fetchLiveFromProxy(stock.symbol)} title="Fetch Latest from NSE">🔄</button>
                       </td>
-                      <td data-label="TICKER" className="td-symbol">
-                        <div className="stock-info">
-                          <span className="symbol">{stock.symbol}</span>
-                          <span className="name">{stock.name}</span>
+                      <td>
+                        <div className="symbol-cell">
+                          <a href={nseLink} target="_blank" rel="noreferrer" className="symbol-link">
+                            <span className="symbol">{stock.symbol}</span>
+                          </a>
+                          <span className="sector">{stock.sector}</span>
                         </div>
                       </td>
-                      <td data-label="CAP"><span className={`badge-cap ${stock.cap.toLowerCase()}`}>{stock.cap}</span></td>
-                      <td data-label="PRICE" className="td-price">₹{stock.price}</td>
-                      <td data-label="CHANGE">
-                        <span className={change >= 0 ? 'up' : 'down'}>
-                          {change >= 0 ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%
-                        </span>
+                      <td><span className={`badge-cap ${stock.cap.toLowerCase()}`}>{stock.cap}</span></td>
+                      <td className="price-cell">
+                        <a href={nseLink} target="_blank" rel="noreferrer" className="value-link">
+                          <div className="price-stack">
+                            <span>₹{stock.price}</span>
+                            <span className="source-tag">NSE LIVE</span>
+                          </div>
+                        </a>
                       </td>
-                      <td data-label="P/E">{stock.pe}</td>
-                      <td data-label="P/B">{stock.pb}</td>
-                      <td data-label="ANALYSE">
-                        <button className="btn-analyse" onClick={() => setSelectedStock(stock)}>Analyse</button>
+                      <td className={change >= 0 ? 'up' : 'down'}>
+                        {change > 0 ? '▲' : '▼'} {Math.abs(change)}%
+                      </td>
+                      <td>
+                        <a href={nseLink} target="_blank" rel="noreferrer" className="value-link">{stock.pe}</a>
+                      </td>
+                      <td>
+                        <a href={nseLink} target="_blank" rel="noreferrer" className="value-link">{stock.pb}</a>
+                      </td>
+                      <td>
+                        <button className="btn-info" onClick={() => setSelectedStock(stock)}>Analyse</button>
                       </td>
                     </tr>
                   );
