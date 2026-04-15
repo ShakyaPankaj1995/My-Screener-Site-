@@ -562,16 +562,16 @@ function StockAnalyticsModal({ stock, onClose }) {
               <div className="ma-panel-title">📊 Key Statistics</div>
               <div className="key-stats-grid">
                 {[
-                  ['P/E RATIO', stock.pe],
-                  ['P/B RATIO', stock.pb],
-                  ['MARKET CAP', formatAmount(stats.marketCap)],
-                  ['DIVIDEND YIELD', `${stats.divYield}%`],
-                  ['BOOK VALUE', `₹${stats.bv}`],
-                  ['EPS', `₹${stats.eps}`],
-                  ['ROE', `${stats.roe}%`],
-                  ['FACE VALUE', stats.faceValue],
-                ].map(([label, val]) => (
-                  <div className="ks-item" key={label}>
+                  ['P/E RATIO', stock.pe, 'Price to Earnings: Measures the stock price relative to its annual earnings. Lower can mean better value.'],
+                  ['P/B RATIO', stock.pb, 'Price to Book: Compares the market price to the company\'s book value.'],
+                  ['MARKET CAP', formatAmount(stats.marketCap), 'Total market value of the company\'s outstanding shares.'],
+                  ['DIVIDEND YIELD', `${stats.divYield}%`, 'Annual dividend payment as a percentage of the current share price.'],
+                  ['BOOK VALUE', `₹${stats.bv}`, 'The net value of the company\'s assets divided by total shares.'],
+                  ['EPS', `₹${stats.eps}`, 'Earnings Per Share: Profit allocated to each outstanding share.'],
+                  ['ROE', `${stats.roe}%`, 'Return on Equity: Measures profit generated from shareholders\' capital.'],
+                  ['FACE VALUE', stats.faceValue, 'The original value of the stock as listed in company books.'],
+                ].map(([label, val, desc]) => (
+                  <div className="ks-item" key={label} title={desc}>
                     <span className="ks-label">{label}</span>
                     <span className="ks-val">{val}</span>
                   </div>
@@ -583,13 +583,13 @@ function StockAnalyticsModal({ stock, onClose }) {
               <div className="ma-panel-title">📁 Financial Highlights (FY25) <a href={nseLink} target="_blank" rel="noreferrer" className="panel-source-link">Source: NSE Financials ↗</a></div>
               <div className="fin-highlights">
                 {[
-                  ['Total Assets',      formatAmount(stats.totalAssets), ''],
-                  ['Total Liabilities', formatAmount(stats.totalLiab),   'down'],
-                  ['Revenue',           formatAmount(stats.revenue),     ''],
-                  ['Net Profit',        formatAmount(stats.netProfit),   'up'],
-                ].map(([label, val, cls]) => (
+                  ['Total Assets',      formatAmount(stats.totalAssets), '', 'The combined value of everything the company owns.'],
+                  ['Total Liabilities', formatAmount(stats.totalLiab),   'down', 'Total amount of debt and obligations the company owes.'],
+                  ['Revenue',           formatAmount(stats.revenue),     '', 'Total money generated from sales and operations (Top Line).'],
+                  ['Net Profit',        formatAmount(stats.netProfit),   'up', 'The final profit remaining after all expenses and taxes are paid.'],
+                ].map(([label, val, cls, desc]) => (
                   <React.Fragment key={label}>
-                    <div className="fh-row"><span>{label}</span><span className={`fh-val ${cls}`}>{val}</span></div>
+                    <div className="fh-row" title={desc}><span>{label}</span><span className={`fh-val ${cls}`}>{val}</span></div>
                     <div className="fh-divider"></div>
                   </React.Fragment>
                 ))}
@@ -597,12 +597,12 @@ function StockAnalyticsModal({ stock, onClose }) {
               <div className="key-ratios">
                 <div className="kr-label">KEY RATIOS <span className="ks-label" style={{ marginLeft: '10px', textTransform: 'none' }}>Data: Projected FY25</span></div>
                 {[
-                  ['Debt to Equity', stats.debtEquity, ''],
-                  ['Cash Balance',   formatAmount(stats.cashBal), 'up'],
-                  ['EPS',            `₹${stats.eps}`,         ''],
-                  ['ROE',            `${stats.roe}%`,         'up'],
-                ].map(([label, val, cls]) => (
-                  <div className="kr-row" key={label}>
+                  ['Debt to Equity', stats.debtEquity, '',   'Measures proportion of financing from debt compared to shareholders.'],
+                  ['Cash Balance',   formatAmount(stats.cashBal), 'up', 'Total liquid cash available for operations and expansion.'],
+                  ['EPS',            `₹${stats.eps}`,         '',   'Earnings Per Share: Profit allocated to each outstanding share.'],
+                  ['ROE',            `${stats.roe}%`,         'up', 'Return on Equity: Measures profit generated from shareholders\' capital.'],
+                ].map(([label, val, cls, desc]) => (
+                  <div className="kr-row" key={label} title={desc}>
                     <span>{label}</span><span className={`kr-val ${cls}`}>{val}</span>
                   </div>
                 ))}
