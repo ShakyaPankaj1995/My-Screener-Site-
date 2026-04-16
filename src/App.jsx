@@ -258,10 +258,8 @@ const App = () => {
                 {paginatedStocks.map((stock) => {
                   const change = parseFloat(stock.change) || 0;
                   const nseLink = `https://www.nseindia.com/get-quote/equity/${stock.nseSlug || stock.symbol}`;
-                  const wDir = deriveSignals(stock).week.dir;
-                  let signal = 'WAIT';
-                  if (wDir === 'Bullish' && change > 0.5) signal = 'BUY';
-                  else if (wDir === 'Bearish' || change < -0.5) signal = 'SELL';
+                  const signals = deriveSignals(stock);
+                  const signal = signals.signal;
                   
                   return (
                     <tr key={stock.symbol} className="table-row">
@@ -387,11 +385,18 @@ function deriveSignals(stock) {
     ? `Technical data suggests a ${macd} on the daily chart. With estimated RSI at ${rsiEst}, the stock is showing healthy accumulation. Support levels are holding firm near 50-DMA, suggesting a sustained move toward the upper Bollinger Band.`
     : `Momentum has shifted to ${macd} territory. RSI at ${rsiEst} indicates the stock is ${rsiEst < 30 ? 'Oversold' : 'losing steam'}. Potential downside support at the 200-DMA needs to be monitored before fresh entries.`;
 
+  let score = Math.round(rsiEst);
+  if (score < 40) score = 75; // Oversold bounce logic
+  const signal = score > 65 ? 'BUY' : score < 40 ? 'SELL' : 'WAIT';
+
   return {
     week:  { label: 'Week Ahead', dir: weekDir, conf: Math.round(weekConf) },
     month: { label: '1 Month Trend', dir: monthDir, conf: Math.round(monthConf) },
     year:  { label: '1 Year Target', dir: yearDir, conf: Math.round(yearConf) },
-    summary
+    summary,
+    rsiEst,
+    signal,
+    score
   };
 }
 
@@ -437,9 +442,8 @@ function ProfessionalAnalysis({ symbol, fallbackSignals }) {
 
   // Build synthetic technical data when live API is offline
   const syntheticPrice = parseFloat(fallbackSignals.price || 0);
-  const isBullish = fallbackSignals.week?.dir === 'Bullish';
   const verdictData = displayData || {
-    oscillators: { rsi: isBullish ? 58 : 40 },
+    oscillators: { rsi: fallbackSignals.rsiEst || 50 },
     moving_averages: {
       ema20:  syntheticPrice * 0.98,
       ema50:  syntheticPrice * 0.95,
