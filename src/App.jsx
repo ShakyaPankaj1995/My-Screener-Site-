@@ -351,7 +351,8 @@ function deriveStats(stock) {
     : ((((price * mult) / 1000) * 0.12) * (pe < 20 ? 0.18 : 0.12)).toFixed(2);
     
   const roe          = (pe / pb * 4).toFixed(2);
-  const divYield     = pe < 12 ? (2.8 + Math.random()).toFixed(2) : (0.4 + Math.random() * 1.2).toFixed(2);
+  // Use a deterministic calculation based on stable numbers like P/E instead of Math.random() so it stays fixed upon refresh
+  const divYield     = pe < 12 ? (2.8 + (pe % 1)).toFixed(2) : (0.4 + (pe % 1.2)).toFixed(2);
   const faceValue    = ['KOTAKBANK','HDFCBANK','INFY','TCS','WIPRO'].includes(stock.symbol) ? '₹1' : '₹10';
   
   // Extrapolate remaining financials using accurate realNetProfit basis
