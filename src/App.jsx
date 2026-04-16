@@ -379,6 +379,7 @@ function deriveSignals(stock) {
     : `Momentum has shifted to ${macd} territory. RSI at ${rsiEst} indicates the stock is ${rsiEst < 30 ? 'Oversold' : 'losing steam'}. Potential downside support at the 200-DMA needs to be monitored before fresh entries.`;
 
   return {
+    price: stock.price,
     week:  { label: 'Week Ahead', dir: weekDir, conf: Math.round(weekConf) },
     month: { label: '1 Month Trend', dir: monthDir, conf: Math.round(monthConf) },
     year:  { label: '1 Year Target', dir: yearDir, conf: Math.round(yearConf) },
@@ -391,7 +392,7 @@ function deriveSignals(stock) {
 
 // ── Technical Analysis Section ───────────────────────────────────────────────
 
-function ProfessionalAnalysis({ symbol, fallbackSignals }) {
+function ProfessionalAnalysis({ symbol, fallbackSignals, refreshTrigger }) {
   const [techData, setTechData] = useState(null);
   const [interval, setInterval] = useState('1D');
   const [loading, setLoading] = useState(true);
@@ -411,7 +412,7 @@ function ProfessionalAnalysis({ symbol, fallbackSignals }) {
         setError(true);
       })
       .finally(() => setLoading(false));
-  }, [symbol, interval]);
+  }, [symbol, interval, refreshTrigger]);
 
   if (loading) {
     return (
@@ -638,6 +639,7 @@ function StockAnalyticsModal({ stock, onClose }) {
   const [news, setNews]     = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     setNewsLoading(true);
@@ -647,7 +649,7 @@ function StockAnalyticsModal({ stock, onClose }) {
       .then(data => { setNews(Array.isArray(data) ? data : []); })
       .catch(() => setNews([]))
       .finally(() => setNewsLoading(false));
-  }, [stock.symbol]);
+  }, [stock.symbol, refreshTrigger]);
 
   const stats   = deriveStats(stock);
   const signals = deriveSignals(stock);
@@ -679,7 +681,12 @@ function StockAnalyticsModal({ stock, onClose }) {
               {change >= 0 ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%
             </span>
           </div>
-          <button className="close-btn" onClick={onClose}>&times;</button>
+          <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+            <button className="btn-refresh-sm" title="Refresh Live Data" onClick={() => setRefreshTrigger(prev => prev + 1)}>
+              ↻ Sync
+            </button>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
         </div>
 
         <div className="ma-tabs">
@@ -755,7 +762,7 @@ function StockAnalyticsModal({ stock, onClose }) {
           {/* ─ Technicals Tab ─ */}
           {activeTab === 'technicals' && (
             <div className="tb-tab-content fade-in">
-              <ProfessionalAnalysis symbol={stock.symbol} fallbackSignals={signals} />
+              <ProfessionalAnalysis symbol={stock.symbol} fallbackSignals={signals} refreshTrigger={refreshTrigger} />
             </div>
           )}
 

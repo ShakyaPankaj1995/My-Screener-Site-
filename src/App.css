@@ -1360,3 +1360,23 @@ dhtml, body { overflow-x: hidden; position: relative; width: 100%; }
   }
 }
 
+
+.btn-refresh-sm {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+  padding: 0.3rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.btn-refresh-sm:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
