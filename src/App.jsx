@@ -637,6 +637,7 @@ function analyzeTechnicalData(data, symbol, fallback) {
 function StockAnalyticsModal({ stock, onClose }) {
   const [news, setNews]     = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     setNewsLoading(true);
@@ -652,6 +653,13 @@ function StockAnalyticsModal({ stock, onClose }) {
   const signals = deriveSignals(stock);
   const nseLink = `https://www.nseindia.com/get-quote/equity/${stock.nseSlug || stock.symbol}`;
   const change  = parseFloat(stock.change) || 0;
+
+  const tabs = [
+    { id: 'overview', label: 'Overview & Financials' },
+    { id: 'technicals', label: 'Pro Technicals' },
+    { id: 'signals', label: 'AI Signals & Charts' },
+    { id: 'news', label: 'News Feed' }
+  ];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -674,117 +682,142 @@ function StockAnalyticsModal({ stock, onClose }) {
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
 
-        <div className="ma-body">
+        <div className="ma-tabs">
+          {tabs.map(tab => (
+            <button 
+              key={tab.id}
+              className={`ma-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          {/* ─ Left col ─ */}
-          <div className="ma-left">
-            <div className="ma-panel">
-              <div className="ma-panel-title">📊 Key Statistics</div>
-              <div className="key-stats-grid">
-                {[
-                  ['P/E RATIO', stock.pe, 'Price to Earnings: Measures the stock price relative to its annual earnings. Lower can mean better value.'],
-                  ['P/B RATIO', stock.pb, 'Price to Book: Compares the market price to the company\'s book value.'],
-                  ['MARKET CAP', formatAmount(stats.marketCap), 'Total market value of the company\'s outstanding shares.'],
-                  ['DIVIDEND YIELD', `${stats.divYield}%`, 'Annual dividend payment as a percentage of the current share price.'],
-                  ['BOOK VALUE', `₹${stats.bv}`, 'The net value of the company\'s assets divided by total shares.'],
-                  ['EPS', `₹${stats.eps}`, 'Earnings Per Share: Profit allocated to each outstanding share.'],
-                  ['ROE', `${stats.roe}%`, 'Return on Equity: Measures profit generated from shareholders\' capital.'],
-                  ['FACE VALUE', stats.faceValue, 'The original value of the stock as listed in company books.'],
-                ].map(([label, val, desc]) => (
-                  <div className="ks-item" key={label} title={desc}>
-                    <span className="ks-label">{label}</span>
-                    <span className="ks-val">{val}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="ma-panel">
-              <div className="ma-panel-title">📁 Financial Highlights (FY25) <a href={nseLink} target="_blank" rel="noreferrer" className="panel-source-link">Source: NSE Financials ↗</a></div>
-              <div className="fin-highlights">
-                {[
-                  ['Total Assets',      formatAmount(stats.totalAssets), '', 'The combined value of everything the company owns.'],
-                  ['Total Liabilities', formatAmount(stats.totalLiab),   'down', 'Total amount of debt and obligations the company owes.'],
-                  ['Revenue',           formatAmount(stats.revenue),     '', 'Total money generated from sales and operations (Top Line).'],
-                  ['Net Profit',        formatAmount(stats.netProfit),   'up', 'The final profit remaining after all expenses and taxes are paid.'],
-                ].map(([label, val, cls, desc]) => (
-                  <React.Fragment key={label}>
-                    <div className="fh-row" title={desc}><span>{label}</span><span className={`fh-val ${cls}`}>{val}</span></div>
-                    <div className="fh-divider"></div>
-                  </React.Fragment>
-                ))}
-              </div>
-              <div className="key-ratios">
-                <div className="kr-label">KEY RATIOS <span className="ks-label" style={{ marginLeft: '10px', textTransform: 'none' }}>Data: Projected FY25</span></div>
-                {[
-                  ['Debt to Equity', stats.debtEquity, '',   'Measures proportion of financing from debt compared to shareholders.'],
-                  ['Cash Balance',   formatAmount(stats.cashBal), 'up', 'Total liquid cash available for operations and expansion.'],
-                  ['EPS',            `₹${stats.eps}`,         '',   'Earnings Per Share: Profit allocated to each outstanding share.'],
-                  ['ROE',            `${stats.roe}%`,         'up', 'Return on Equity: Measures profit generated from shareholders\' capital.'],
-                ].map(([label, val, cls, desc]) => (
-                  <div className="kr-row" key={label} title={desc}>
-                    <span>{label}</span><span className={`kr-val ${cls}`}>{val}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* New Professional Technical Analysis Section */}
-            <ProfessionalAnalysis symbol={stock.symbol} fallbackSignals={signals} />
-          </div>
-
-          {/* ─ Right col ─ */}
-          <div className="ma-right">
-            <div className="ma-panel ai-signals-panel">
-              <div className="ma-panel-title">🤖 AI Market Signals & Technicals</div>
-              
-              {/* TradingView Technical Gauge Widget */}
-              <div className="tv-widget-container">
-                 <TradingViewTechnicalWidget symbol={stock.symbol} />
-              </div>
-
-              {[signals.week, signals.month, signals.year].map((sig, i) => (
-                <div key={i} className="signal-row">
-                  <div className="sig-top">
-                    <span className="sig-label">{sig.label}</span>
-                    <span className={`sig-dir ${sig.dir === 'Bullish' ? 'up' : sig.dir === 'Bearish' ? 'down' : 'neutral-tag'}`}>
-                      {sig.dir}
-                    </span>
-                  </div>
-                  <div className="sig-bar-bg">
-                    <div className="sig-bar-fill" style={{
-                      width: `${sig.conf}%`,
-                      background: sig.dir === 'Bullish' ? 'var(--accent-up)' : sig.dir === 'Bearish' ? 'var(--accent-down)' : '#f59e0b'
-                    }}></div>
-                  </div>
-                  <span className="sig-conf">{sig.conf}% confidence</span>
+        <div className="ma-body-tabbed">
+          
+          {/* ─ Overview Tab ─ */}
+          {activeTab === 'overview' && (
+            <div className="tb-tab-content fade-in">
+              <div className="ma-panel">
+                <div className="ma-panel-title">📊 Key Statistics</div>
+                <div className="key-stats-grid">
+                  {[
+                    ['P/E RATIO', stock.pe, 'Price to Earnings: Measures the stock price relative to its annual earnings. Lower can mean better value.'],
+                    ['P/B RATIO', stock.pb, 'Price to Book: Compares the market price to the company\'s book value.'],
+                    ['MARKET CAP', formatAmount(stats.marketCap), 'Total market value of the company\'s outstanding shares.'],
+                    ['DIVIDEND YIELD', `${stats.divYield}%`, 'Annual dividend payment as a percentage of the current share price.'],
+                    ['BOOK VALUE', `₹${stats.bv}`, 'The net value of the company\'s assets divided by total shares.'],
+                    ['EPS', `₹${stats.eps}`, 'Earnings Per Share: Profit allocated to each outstanding share.'],
+                    ['ROE', `${stats.roe}%`, 'Return on Equity: Measures profit generated from shareholders\' capital.'],
+                    ['FACE VALUE', stats.faceValue, 'The original value of the stock as listed in company books.'],
+                  ].map(([label, val, desc]) => (
+                    <div className="ks-item" key={label} title={desc}>
+                      <span className="ks-label">{label}</span>
+                      <span className="ks-val">{val}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              <p className="sig-summary">{signals.summary}</p>
-            </div>
+              </div>
 
-            <div className="ma-panel">
-              <div className="ma-panel-title">📰 News Sentiment & Impact</div>
-              {newsLoading && (
-                <div className="news-loading">⟳ Fetching latest news for {stock.symbol}…</div>
-              )}
-              {!newsLoading && news.length === 0 && (
-                <div className="news-loading">No recent news found. Check <a href={`https://news.google.com/search?q=${encodeURIComponent(stock.name+' NSE')}`} target="_blank" rel="noreferrer" className="ma-tag-link">Google News ↗</a></div>
-              )}
-              {news.map((n, i) => (
-                <div key={i} className="news-item">
-                  <div className="news-meta">
-                    <span className="news-source">{n.source}</span>
-                    {n.pubDate && <span className="news-time">{n.pubDate}</span>}
-                  </div>
-                  <a href={n.link} target="_blank" rel="noreferrer" className="news-headline-link">
-                    <p className="news-headline">{n.title} ↗</p>
-                  </a>
+              <div className="ma-panel mt-4">
+                <div className="ma-panel-title">📁 Financial Highlights (FY25) <a href={nseLink} target="_blank" rel="noreferrer" className="panel-source-link">Source: NSE Financials ↗</a></div>
+                <div className="fin-highlights">
+                  {[
+                    ['Total Assets',      formatAmount(stats.totalAssets), '', 'The combined value of everything the company owns.'],
+                    ['Total Liabilities', formatAmount(stats.totalLiab),   'down', 'Total amount of debt and obligations the company owes.'],
+                    ['Revenue',           formatAmount(stats.revenue),     '', 'Total money generated from sales and operations (Top Line).'],
+                    ['Net Profit',        formatAmount(stats.netProfit),   'up', 'The final profit remaining after all expenses and taxes are paid.'],
+                  ].map(([label, val, cls, desc]) => (
+                    <React.Fragment key={label}>
+                      <div className="fh-row" title={desc}><span>{label}</span><span className={`fh-val ${cls}`}>{val}</span></div>
+                      <div className="fh-divider"></div>
+                    </React.Fragment>
+                  ))}
                 </div>
-              ))}
+                <div className="key-ratios">
+                  <div className="kr-label">KEY RATIOS <span className="ks-label" style={{ marginLeft: '10px', textTransform: 'none' }}>Data: Projected FY25</span></div>
+                  {[
+                    ['Debt to Equity', stats.debtEquity, '',   'Measures proportion of financing from debt compared to shareholders.'],
+                    ['Cash Balance',   formatAmount(stats.cashBal), 'up', 'Total liquid cash available for operations and expansion.'],
+                    ['EPS',            `₹${stats.eps}`,         '',   'Earnings Per Share: Profit allocated to each outstanding share.'],
+                    ['ROE',            `${stats.roe}%`,         'up', 'Return on Equity: Measures profit generated from shareholders\' capital.'],
+                  ].map(([label, val, cls, desc]) => (
+                    <div className="kr-row" key={label} title={desc}>
+                      <span>{label}</span><span className={`kr-val ${cls}`}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+          )}
 
-          </div>
+          {/* ─ Technicals Tab ─ */}
+          {activeTab === 'technicals' && (
+            <div className="tb-tab-content fade-in">
+              <ProfessionalAnalysis symbol={stock.symbol} fallbackSignals={signals} />
+            </div>
+          )}
+
+          {/* ─ AI Signals & Charts Tab ─ */}
+          {activeTab === 'signals' && (
+            <div className="tb-tab-content fade-in">
+              <div className="ma-panel ai-signals-panel">
+                <div className="ma-panel-title">🤖 AI Market Signals & Technicals</div>
+                
+                {/* TradingView Technical Gauge Widget */}
+                <div className="tv-widget-container">
+                   <TradingViewTechnicalWidget symbol={stock.symbol} />
+                </div>
+
+                {[signals.week, signals.month, signals.year].map((sig, i) => (
+                  <div key={i} className="signal-row">
+                    <div className="sig-top">
+                      <span className="sig-label">{sig.label}</span>
+                      <span className={`sig-dir ${sig.dir === 'Bullish' ? 'up' : sig.dir === 'Bearish' ? 'down' : 'neutral-tag'}`}>
+                        {sig.dir}
+                      </span>
+                    </div>
+                    <div className="sig-bar-bg">
+                      <div className="sig-bar-fill" style={{
+                        width: `${sig.conf}%`,
+                        background: sig.dir === 'Bullish' ? 'var(--accent-up)' : sig.dir === 'Bearish' ? 'var(--accent-down)' : '#f59e0b'
+                      }}></div>
+                    </div>
+                    <span className="sig-conf">{sig.conf}% confidence</span>
+                  </div>
+                ))}
+                <p className="sig-summary">{signals.summary}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ─ News Feed Tab ─ */}
+          {activeTab === 'news' && (
+            <div className="tb-tab-content fade-in">
+              <div className="ma-panel">
+                <div className="ma-panel-title">📰 News Sentiment & Impact</div>
+                {newsLoading && (
+                  <div className="news-loading">⟳ Fetching latest news for {stock.symbol}…</div>
+                )}
+                {!newsLoading && news.length === 0 && (
+                  <div className="news-loading">No recent news found. Check <a href={`https://news.google.com/search?q=${encodeURIComponent(stock.name+' NSE')}`} target="_blank" rel="noreferrer" className="ma-tag-link">Google News ↗</a></div>
+                )}
+                {news.map((n, i) => (
+                  <div key={i} className="news-item">
+                    <div className="news-meta">
+                      <span className="news-source">{n.source}</span>
+                      {n.pubDate && <span className="news-time">{n.pubDate}</span>}
+                    </div>
+                    <a href={n.link} target="_blank" rel="noreferrer" className="news-headline-link">
+                      <p className="news-headline">{n.title} ↗</p>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
