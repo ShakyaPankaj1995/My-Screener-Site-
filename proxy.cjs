@@ -88,7 +88,7 @@ async function fetchStock(symbol) {
         pe:            d.metadata?.pdSymbolPe  || null,
         pb:            d.metadata?.pdPriceToBV || null,
         eps:           d.metadata?.pdEps       || null,
-        marketCap:     d.industryInfo?.macro   || null,
+        totalShares:   d.securityInfo?.issuedSize || null,
     };
 }
 

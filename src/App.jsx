@@ -55,8 +55,10 @@ const App = () => {
               price:     parseFloat(item.price).toFixed(2),
               prevClose: parseFloat(item.prevClose || s.prevClose).toFixed(2),
               change:    parseFloat(item.changePercent).toFixed(2),
-              pe:        item.pe   != null ? parseFloat(item.pe).toFixed(2)  : s.pe,
-              pb:        item.pb   != null ? parseFloat(item.pb).toFixed(2)  : s.pb,
+              pe:          item.pe          != null ? parseFloat(item.pe).toFixed(2)  : s.pe,
+              pb:          item.pb          != null ? parseFloat(item.pb).toFixed(2)  : s.pb,
+              eps:         item.eps         != null ? parseFloat(item.eps).toFixed(2) : s.eps,
+              totalShares: item.totalShares != null ? parseInt(item.totalShares, 10)  : s.totalShares,
             } : s));
           }
         });
@@ -331,20 +333,35 @@ function deriveStats(stock) {
   const price = parseFloat(stock.price);
   const pe    = parseFloat(stock.pe) || 20;
   const pb    = parseFloat(stock.pb) || 3;
-  const eps   = (price / pe).toFixed(2);
+  const hasLiveEps = stock.eps && !isNaN(parseFloat(stock.eps));
+  const eps   = hasLiveEps ? parseFloat(stock.eps).toFixed(2) : (price / pe).toFixed(2);
   const bv    = (price / pb).toFixed(2);
+  
   const capMult = { Large: 1200, Mid: 180, Small: 40 };
   const mult  = capMult[stock.cap] || 100;
-  const marketCap    = ((price * mult) / 1000).toFixed(0);
+  
+  const hasLiveShares = stock.totalShares && !isNaN(stock.totalShares);
+  const marketCap = hasLiveShares 
+    ? ((price * stock.totalShares) / 10000000).toFixed(0) // In Crores
+    : ((price * mult) / 1000).toFixed(0);
+    
+  // Real Net Profit = EPS * Total Shares (in Crores)
+  const realNetProfit = hasLiveShares && hasLiveEps 
+    ? ((parseFloat(stock.eps) * stock.totalShares) / 10000000).toFixed(2)
+    : ((((price * mult) / 1000) * 0.12) * (pe < 20 ? 0.18 : 0.12)).toFixed(2);
+    
   const roe          = (pe / pb * 4).toFixed(2);
   const divYield     = pe < 12 ? (2.8 + Math.random()).toFixed(2) : (0.4 + Math.random() * 1.2).toFixed(2);
   const faceValue    = ['KOTAKBANK','HDFCBANK','INFY','TCS','WIPRO'].includes(stock.symbol) ? '₹1' : '₹10';
-  const revenue      = (price * mult * 0.12 / 1000).toFixed(2);
-  const netProfit    = (revenue * (pe < 20 ? 0.18 : 0.12)).toFixed(2);
-  const totalAssets  = (price * mult * 0.55 / 1000).toFixed(2);
+  
+  // Extrapolate remaining financials using accurate realNetProfit basis
+  const revenue      = hasLiveShares && hasLiveEps ? (parseFloat(realNetProfit) * 7.5).toFixed(2) : ((price * mult * 0.12) / 1000).toFixed(2);
+  const netProfit    = realNetProfit;
+  const totalAssets  = hasLiveShares ? (parseFloat(marketCap) * 0.55).toFixed(2) : ((price * mult * 0.55) / 1000).toFixed(2);
   const totalLiab    = (totalAssets * 0.40).toFixed(2);
   const debtEquity   = (totalLiab / (totalAssets - totalLiab)).toFixed(2);
   const cashBal      = (revenue * 0.15).toFixed(2);
+
   return { eps, bv, marketCap, roe, divYield, faceValue, revenue, netProfit, totalAssets, totalLiab, debtEquity, cashBal };
 }
 
