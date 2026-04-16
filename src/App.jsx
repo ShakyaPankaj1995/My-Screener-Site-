@@ -250,6 +250,7 @@ const App = () => {
                   <th className="th-sort" onClick={() => handleSort('change')}>Vs Prev Close {sortIcon('change')}</th>
                   <th className="th-sort" onClick={() => handleSort('pe')}>P/E Ratio {sortIcon('pe')}</th>
                   <th className="th-sort" onClick={() => handleSort('pb')}>P/B Ratio {sortIcon('pb')}</th>
+                  <th>Signal</th>
                   <th>Analyse</th>
                 </tr>
               </thead>
@@ -257,6 +258,11 @@ const App = () => {
                 {paginatedStocks.map((stock) => {
                   const change = parseFloat(stock.change) || 0;
                   const nseLink = `https://www.nseindia.com/get-quote/equity/${stock.nseSlug || stock.symbol}`;
+                  const wDir = deriveSignals(stock).week.dir;
+                  let signal = 'WAIT';
+                  if (wDir === 'Bullish' && change > 0.5) signal = 'BUY';
+                  else if (wDir === 'Bearish' || change < -0.5) signal = 'SELL';
+                  
                   return (
                     <tr key={stock.symbol} className="table-row">
                       <td>
@@ -288,6 +294,9 @@ const App = () => {
                       </td>
                       <td>
                         <a href={nseLink} target="_blank" rel="noreferrer" className="value-link">{stock.pb}</a>
+                      </td>
+                      <td>
+                         <span className={`signal-badge ${signal.toLowerCase()}`}>{signal}</span>
                       </td>
                       <td>
                         <button className="btn-info" onClick={() => setSelectedStock(stock)}>Analyse</button>
