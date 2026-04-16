@@ -126,10 +126,15 @@ const App = () => {
     }
   };
 
+  // Lock background scroll when modal is open
   useEffect(() => {
-    // Completely removed automatic sync on load as requested.
-    // Use the "Refresh All" button in the header to update data manually.
-  }, []);
+    if (selectedStock) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selectedStock]);
 
   const [sortConfig, setSortConfig] = useState({ key: null, dir: 'asc' });
 
