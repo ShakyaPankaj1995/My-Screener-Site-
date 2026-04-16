@@ -170,7 +170,7 @@ const App = () => {
 
   return (
     <div className="app-container">
-      <TickerTape stocks={stocks} />
+      {!selectedStock && <TickerTape stocks={stocks} />}
       <header className="main-header glass animate-fade">
         <div className="logo">
           <span className="logo-icon">💠</span>
