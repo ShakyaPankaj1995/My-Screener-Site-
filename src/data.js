@@ -564,6 +564,7 @@ const STOCKS = [
   { symbol:"ITC", nseSlug:"ITC/Itc-Ltd", name:"Itc Ltd", sector:"Diversified", cap:"Small", price:100.00, prevClose:98.00, pe:25.0, pb:3.0 },
   { symbol:"HDFCBANK", nseSlug:"HDFCBANK/Hdfcbank-Ltd", name:"Hdfcbank Ltd", sector:"Banking/Finance", cap:"Small", price:100.00, prevClose:98.00, pe:25.0, pb:3.0 },
   { symbol:"MOSCHIP", nseSlug:"MOSCHIP/Moschip-Technologies-Limited", name:"Moschip Technologies", sector:"IT", cap:"Small", price:100.00, prevClose:98.00, pe:25.0, pb:3.0 },
+  { symbol:"WABAG", nseSlug:"WABAG/VA-Tech-Wabag-Limited", name:"VA Tech Wabag", sector:"Engineering", cap:"Small", price:100.00, prevClose:98.00, pe:25.0, pb:3.0 },
 ];
 
 export const generateNifty500 = () => {
