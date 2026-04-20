@@ -34,6 +34,16 @@ const App = () => {
   const [lastUpdate, setLastUpdate] = useState(new Date().toLocaleTimeString());
   const [isRefreshing, setIsRefreshing] = useState({});
   const [syncStatus, setSyncStatus] = useState({ done: 0, total: 0, loading: false });
+  const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem('stockpulse_favorites') || '[]'));
+  const [showWatchlist, setShowWatchlist] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('stockpulse_favorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (symbol) => {
+    setFavorites(prev => prev.includes(symbol) ? prev.filter(s => s !== symbol) : [...prev, symbol]);
+  };
 
   const itemsPerPage = 20;
 
@@ -129,8 +139,11 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Completely removed automatic sync on load as requested.
-    // Use the "Refresh All" button in the header to update data manually.
+    // Auto update every 15 minutes
+    const interval = setInterval(() => {
+      syncAllStocks();
+    }, 15 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const [sortConfig, setSortConfig] = useState({ key: null, dir: 'asc' });
@@ -144,9 +157,10 @@ const App = () => {
                             (stock.symbol || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesSector = selectedSector === 'All' || stock.sector === selectedSector;
       const matchesCap = selectedCap === 'All' || stock.cap === selectedCap;
-      return matchesSearch && matchesSector && matchesCap;
+      const matchesWatchlist = !showWatchlist || favorites.includes(stock.symbol);
+      return matchesSearch && matchesSector && matchesCap && matchesWatchlist;
     });
-  }, [stocks, searchTerm, selectedSector, selectedCap]);
+  }, [stocks, searchTerm, selectedSector, selectedCap, showWatchlist, favorites]);
 
   const sortedStocks = useMemo(() => {
     if (!sortConfig.key) return filteredStocks;
@@ -230,6 +244,16 @@ const App = () => {
               {sectors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
+          <div className="filter-group">
+            <label>Watchlist</label>
+            <button 
+              className={`cap-chip ${showWatchlist ? 'active' : ''}`}
+              style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}
+              onClick={() => { setShowWatchlist(!showWatchlist); setCurrentPage(1); }}
+            >
+              ⭐️ {showWatchlist ? 'Showing Favorites' : 'View Watchlist'}
+            </button>
+          </div>
           <div className="stats-box">
             <p>Tracking <strong>{filteredStocks.length}</strong> Assets</p>
             <p>Advancers: <span className="up">{stocks.filter(s => parseFloat(s.change) > 0).length}</span></p>
@@ -308,7 +332,14 @@ const App = () => {
         </section>
       </main>
 
-      {selectedStock && <StockAnalyticsModal stock={selectedStock} onClose={() => setSelectedStock(null)} />}
+      {selectedStock && (
+        <StockAnalyticsModal 
+          stock={selectedStock} 
+          onClose={() => setSelectedStock(null)} 
+          isFav={favorites.includes(selectedStock.symbol)}
+          toggleFav={() => toggleFavorite(selectedStock.symbol)}
+        />
+      )}
     </div>
   );
 };
@@ -653,7 +684,7 @@ function analyzeTechnicalData(data, symbol, fallback) {
 
 // ── Analytics Modal ──────────────────────────────────────────────────────────
 
-function StockAnalyticsModal({ stock, onClose }) {
+function StockAnalyticsModal({ stock, onClose, isFav, toggleFav }) {
   const [news, setNews]     = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -700,6 +731,14 @@ function StockAnalyticsModal({ stock, onClose }) {
             </span>
           </div>
           <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+            <button 
+              className="btn-refresh-sm" 
+              title="Toggle Watchlist" 
+              onClick={toggleFav} 
+              style={isFav ? { color: '#f59e0b', borderColor: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)' } : {}}
+            >
+              {isFav ? '⭐ Saved' : '☆ Watch'}
+            </button>
             <button className="btn-refresh-sm" title="Refresh Live Data" onClick={() => setRefreshTrigger(prev => prev + 1)}>
               ↻ Sync
             </button>
