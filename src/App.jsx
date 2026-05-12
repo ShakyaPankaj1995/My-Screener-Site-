@@ -149,6 +149,24 @@ const App = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, dir: 'asc' });
 
   const sectors = useMemo(() => ['All', ...new Set(stocks.map(s => s.sector))], [stocks]);
+
+  const sectorPEs = useMemo(() => {
+    const secMap = {};
+    stocks.forEach(stock => {
+      if (!secMap[stock.sector]) secMap[stock.sector] = { total: 0, count: 0 };
+      const pe = parseFloat(stock.pe);
+      if (pe && pe > 0) {
+        secMap[stock.sector].total += pe;
+        secMap[stock.sector].count += 1;
+      }
+    });
+    const avg = {};
+    for (const sec in secMap) {
+      avg[sec] = secMap[sec].count > 0 ? (secMap[sec].total / secMap[sec].count).toFixed(2) : 'N/A';
+    }
+    return avg;
+  }, [stocks]);
+
   const caps = ['All', 'Large', 'Mid', 'Small'];
 
   const filteredStocks = useMemo(() => {
@@ -165,11 +183,17 @@ const App = () => {
   const sortedStocks = useMemo(() => {
     if (!sortConfig.key) return filteredStocks;
     return [...filteredStocks].sort((a, b) => {
-      const va = parseFloat(a[sortConfig.key]) || 0;
-      const vb = parseFloat(b[sortConfig.key]) || 0;
+      let va, vb;
+      if (sortConfig.key === 'industryPE') {
+        va = parseFloat(sectorPEs[a.sector]) || 0;
+        vb = parseFloat(sectorPEs[b.sector]) || 0;
+      } else {
+        va = parseFloat(a[sortConfig.key]) || 0;
+        vb = parseFloat(b[sortConfig.key]) || 0;
+      }
       return sortConfig.dir === 'asc' ? va - vb : vb - va;
     });
-  }, [filteredStocks, sortConfig]);
+  }, [filteredStocks, sortConfig, sectorPEs]);
 
   const handleSort = (key) => {
     setSortConfig(prev => ({ key, dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc' }));
@@ -275,6 +299,7 @@ const App = () => {
                   </th>
                   <th className="th-sort" onClick={() => handleSort('change')}>Vs Prev Close {sortIcon('change')}</th>
                   <th className="th-sort" onClick={() => handleSort('pe')}>P/E Ratio {sortIcon('pe')}</th>
+                  <th className="th-sort" onClick={() => handleSort('industryPE')}>Industry P/E {sortIcon('industryPE')}</th>
                   <th className="th-sort" onClick={() => handleSort('pb')}>P/B Ratio {sortIcon('pb')}</th>
                   <th>Analyse</th>
                 </tr>
@@ -311,6 +336,9 @@ const App = () => {
                       </td>
                       <td>
                         <a href={nseLink} target="_blank" rel="noreferrer" className="value-link">{stock.pe}</a>
+                      </td>
+                      <td>
+                        <span className="value-link" style={{ opacity: 0.8, color: 'var(--text-dim)' }}>{sectorPEs[stock.sector] || 'N/A'}</span>
                       </td>
                       <td>
                         <a href={nseLink} target="_blank" rel="noreferrer" className="value-link">{stock.pb}</a>
