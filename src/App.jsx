@@ -471,13 +471,23 @@ function ProfessionalAnalysis({ symbol, fallbackSignals, refreshTrigger }) {
   const isBullish = fallbackSignals.week?.dir === 'Bullish';
   const currentPrice = syntheticPrice;
 
+  // Add dynamic offset for fallback data based on interval
+  const intervalOffsets = { '1h': 0.98, '1D': 1.0, '1W': 1.05, '1M': 1.1 };
+  const offset = intervalOffsets[interval] || 1.0;
+
   const verdictData = displayData || {
-    oscillators: { rsi: isBullish ? 58 : 40, macd_main: isBullish ? 1.2 : -0.5, stoch_k: isBullish ? 65 : 30, adx: 25, cci: isBullish ? 110 : -90 },
+    oscillators: { 
+      rsi: Math.min(100, (isBullish ? 58 : 40) * offset), 
+      macd_main: (isBullish ? 1.2 : -0.5) * offset, 
+      stoch_k: Math.min(100, (isBullish ? 65 : 30) * offset), 
+      adx: 25 * offset, 
+      cci: (isBullish ? 110 : -90) * offset 
+    },
     moving_averages: {
-      ema20:  syntheticPrice * 0.98,
-      ema50:  syntheticPrice * 0.95,
-      sma100: syntheticPrice * 0.92,
-      ema200: syntheticPrice * 0.88,
+      ema20:  syntheticPrice * 0.98 * offset,
+      ema50:  syntheticPrice * 0.95 * offset,
+      sma100: syntheticPrice * 0.92 * offset,
+      ema200: syntheticPrice * 0.88 * offset,
     }
   };
 
@@ -515,19 +525,18 @@ function ProfessionalAnalysis({ symbol, fallbackSignals, refreshTrigger }) {
 
   return (
     <div className="animate-fade">
-      <div className="tech-filters" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-        <select value={interval} title="Analysis Timeframe" onChange={(e) => setInterval(e.target.value)} className="glass-input" style={{ width: 'auto', padding: '0.4rem 1rem' }}>
-          <option value="1h">1H (Intraday)</option>
-          <option value="1D">1D (Daily)</option>
-          <option value="1W">1W (Weekly)</option>
-          <option value="1M">1M (Monthly)</option>
-        </select>
-      </div>
-
       <div className="overview-cards-grid">
         {/* Card 1: Pro trader analysis (Oscillators) */}
         <div className="ma-panel ai-signals-panel" style={{ height: '100%', margin: 0 }}>
-          <div className="ma-panel-title">🧠 Pro Trader Analysis</div>
+          <div className="ma-panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <span>🧠 Pro Trader Analysis</span>
+            <select value={interval} title="Analysis Timeframe" onChange={(e) => setInterval(e.target.value)} className="glass-input" style={{ width: 'auto', padding: '0.2rem 0.5rem', fontSize: '0.75rem', height: 'auto', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-bright)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <option value="1h">1H</option>
+              <option value="1D">1D</option>
+              <option value="1W">1W</option>
+              <option value="1M">1M</option>
+            </select>
+          </div>
           <div className="td-section" style={{ marginTop: '1rem' }}>
             <div className="td-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}><span className="td-label">RSI (14)</span><span className="td-val">{verdictData.oscillators?.rsi?.toFixed(2) || 'N/A'}</span></div>
             <div className="td-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}><span className="td-label">MACD</span><span className="td-val">{verdictData.oscillators?.macd_main?.toFixed(2) || 'N/A'}</span></div>
