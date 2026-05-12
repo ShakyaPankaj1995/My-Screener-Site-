@@ -926,8 +926,6 @@ function AnnualReportSynopsis({ stock, stats }) {
   const isGrowthMode = roeVal > 15;
   const isUnderPressure = roeVal < 8 || (peVal > 0 && peVal < 10);
   
-  const targetMet = isGrowthMode ? '4 / 5' : isUnderPressure ? '2 / 5' : '3 / 5';
-  
   const goals = [
     { text: "Revenue growth matched pre-guided double-digit targets.", met: !isUnderPressure },
     { text: isGrowthMode ? "Successfully launched major flagship products in Q3." : "Margin expansion phase slightly delayed due to supply chain inflation.", met: isGrowthMode },
@@ -935,6 +933,15 @@ function AnnualReportSynopsis({ stock, stats }) {
     { text: "Reduce operating expenditure by 10% YoY.", met: !isUnderPressure },
     { text: "Expand market presence in Tier-2 and Tier-3 cities.", met: isGrowthMode }
   ];
+
+  const achievedCount = goals.filter(g => g.met).length;
+  const targetMet = `${achievedCount} / ${goals.length}`;
+
+  const reasoning = isGrowthMode 
+    ? `Rated ${targetMet} because the firm exhibits High Growth metrics (Return on Equity > 15%), indicating aggressive expansion and execution.`
+    : isUnderPressure
+    ? `Rated ${targetMet} because the firm is Under Pressure (ROE < 8% or P/E < 10), reflecting execution challenges and margin compression.`
+    : `Rated ${targetMet} because the firm maintains a Steady/Neutral financial posture (Moderate ROE and valuations).`;
 
   return (
     <div className="ma-panel ai-signals-panel" style={{ height: '100%' }}>
@@ -956,6 +963,11 @@ function AnnualReportSynopsis({ stock, stats }) {
           <h4 style={{ color: 'var(--text-bright)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>All Directed Goals</h4>
           <span className="badge-cap-sm" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>Score: {targetMet}</span>
         </div>
+        
+        <div style={{ padding: '0.6rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', marginBottom: '0.8rem', fontSize: '0.75rem', color: 'var(--text-dim)', borderLeft: '3px solid #60a5fa' }}>
+          <strong style={{ color: '#60a5fa' }}>💡 AI Rationale:</strong> {reasoning}
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {goals.map((g, i) => (
             <div key={i} style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', fontSize: '0.85rem' }}>
