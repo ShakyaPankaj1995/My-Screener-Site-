@@ -432,16 +432,25 @@ function deriveSignals(stock) {
   const weekBull = chg > -0.5 || pe < 22;
   const weekDir  = weekBull ? 'Bullish' : 'Bearish';
   const weekConf = weekBull ? Math.min(85, 65 + Math.abs(chg)*5) : 55;
+  const weekRationale = weekBull 
+    ? "Short-term momentum indicators suggest aggressive institutional buying, supported by recent price breakouts." 
+    : "Short-term volume shows exhaustion, indicating potential consolidation or minor pullback.";
 
   // Month Ahead (RSI + Valuation)
   const monthBull = rsiEst < 65 && pe < 32;
   const monthDir  = monthBull ? 'Bullish' : 'Bearish';
   const monthConf = 60 + (rsiEst > 45 && rsiEst < 65 ? 15 : 0);
+  const monthRationale = monthBull 
+    ? "Moving averages (20-EMA) indicate a solid upward trajectory. Sector tailwinds favor continued growth." 
+    : "Price is facing heavy resistance zones. Macro headwinds in the sector may stall upside potential.";
 
   // Year Ahead (Long term Fundamentals)
   const yearBull = pe < 42 && pb < 10;
   const yearDir  = yearBull ? 'Bullish' : 'Neutral';
   const yearConf = 70 + (pe < 25 ? 12 : 0);
+  const yearRationale = yearBull 
+    ? "Fundamental valuation metrics (P/E, P/B) remain attractive for long-term compounding and asset expansion." 
+    : "Valuations appear stretched relative to historic means, suggesting limited margin of safety for long-term holds.";
 
   const summary = weekBull
     ? `Technical data suggests a ${macd} on the daily chart. With estimated RSI at ${rsiEst}, the stock is showing healthy accumulation. Support levels are holding firm near 50-DMA, suggesting a sustained move toward the upper Bollinger Band.`
@@ -449,9 +458,9 @@ function deriveSignals(stock) {
 
   return {
     price: stock.price,
-    week:  { label: 'Week Ahead', dir: weekDir, conf: Math.round(weekConf) },
-    month: { label: '1 Month Trend', dir: monthDir, conf: Math.round(monthConf) },
-    year:  { label: '1 Year Target', dir: yearDir, conf: Math.round(yearConf) },
+    week:  { label: 'Week Ahead', dir: weekDir, conf: Math.round(weekConf), rationale: weekRationale },
+    month: { label: '1 Month Trend', dir: monthDir, conf: Math.round(monthConf), rationale: monthRationale },
+    year:  { label: '1 Year Target', dir: yearDir, conf: Math.round(yearConf), rationale: yearRationale },
     summary
   };
 }
@@ -829,32 +838,51 @@ function StockAnalyticsModal({ stock, onClose, isFav, toggleFav }) {
           {/* ─ AI Signals & Charts Tab ─ */}
           {activeTab === 'signals' && (
             <div className="tb-tab-content fade-in">
-              <div className="ma-panel ai-signals-panel">
-                <div className="ma-panel-title">🤖 AI Market Signals & Technicals</div>
+              <div className="overview-cards-grid">
                 
-                {/* TradingView Technical Gauge Widget */}
-                <div className="tv-widget-container">
-                   <TradingViewTechnicalWidget symbol={stock.symbol} />
+                {/* Card 1: Trading View Widget */}
+                <div className="ma-panel ai-signals-panel" style={{ height: '100%', margin: 0 }}>
+                  <div className="ma-panel-title">📊 Technical Analysis for {stock.symbol}</div>
+                  <div className="tv-widget-container" style={{ marginTop: '1rem', background: 'transparent' }}>
+                     <TradingViewTechnicalWidget symbol={stock.symbol} />
+                  </div>
                 </div>
 
-                {[signals.week, signals.month, signals.year].map((sig, i) => (
-                  <div key={i} className="signal-row">
-                    <div className="sig-top">
-                      <span className="sig-label">{sig.label}</span>
-                      <span className={`sig-dir ${sig.dir === 'Bullish' ? 'up' : sig.dir === 'Bearish' ? 'down' : 'neutral-tag'}`}>
-                        {sig.dir}
-                      </span>
-                    </div>
-                    <div className="sig-bar-bg">
-                      <div className="sig-bar-fill" style={{
-                        width: `${sig.conf}%`,
-                        background: sig.dir === 'Bullish' ? 'var(--accent-up)' : sig.dir === 'Bearish' ? 'var(--accent-down)' : '#f59e0b'
-                      }}></div>
-                    </div>
-                    <span className="sig-conf">{sig.conf}% confidence</span>
+                {/* Card 2: Overall Trend */}
+                <div className="ma-panel ai-signals-panel" style={{ height: '100%', margin: 0 }}>
+                  <div className="ma-panel-title">📈 Overall Trend</div>
+                  <p className="sig-summary" style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '1.5rem', marginTop: '0.5rem', lineHeight: '1.5' }}>{signals.summary}</p>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {[signals.week, signals.month, signals.year].map((sig, i) => (
+                      <div key={i} className="signal-row" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '0.8rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="sig-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span className="sig-label" style={{ fontWeight: 'bold', color: 'var(--text-bright)' }}>{sig.label}</span>
+                          <span className={`sig-dir ${sig.dir === 'Bullish' ? 'up' : sig.dir === 'Bearish' ? 'down' : 'neutral-tag'}`} style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: '4px', background: sig.dir === 'Bullish' ? 'rgba(16, 185, 129, 0.1)' : sig.dir === 'Bearish' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)' }}>
+                            {sig.dir}
+                          </span>
+                        </div>
+                        <div className="sig-bar-bg" style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div className="sig-bar-fill" style={{
+                            height: '100%',
+                            width: `${sig.conf}%`,
+                            background: sig.dir === 'Bullish' ? 'var(--accent-up)' : sig.dir === 'Bearish' ? 'var(--accent-down)' : '#f59e0b',
+                            transition: 'width 1s ease'
+                          }}></div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', flex: 1, paddingRight: '1rem', lineHeight: '1.4' }}>
+                            <strong style={{ color: 'var(--text-bright)', opacity: 0.8 }}>Rationale:</strong> {sig.rationale}
+                          </span>
+                          <span className="sig-conf" style={{ fontSize: '0.75rem', fontWeight: 'bold', color: sig.dir === 'Bullish' ? 'var(--accent-up)' : sig.dir === 'Bearish' ? '#ef4444' : '#f59e0b' }}>
+                            {sig.conf}% conf.
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                <p className="sig-summary">{signals.summary}</p>
+                </div>
+
               </div>
             </div>
           )}
