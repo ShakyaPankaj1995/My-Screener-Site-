@@ -410,7 +410,20 @@ function deriveStats(stock) {
   const revenue      = hasLiveShares && hasLiveEps ? (parseFloat(realNetProfit) * 7.5).toFixed(2) : ((price * mult * 0.12) / 1000).toFixed(2);
   const netProfit    = realNetProfit;
   const totalAssets  = hasLiveShares ? (parseFloat(marketCap) * 0.55).toFixed(2) : ((price * mult * 0.55) / 1000).toFixed(2);
-  const totalLiab    = (totalAssets * 0.40).toFixed(2);
+  // Dynamically calculate liability ratio to prevent identical Debt/Equity metrics
+  const isFinance = ['Banking', 'Finance'].includes(stock.sector);
+  const charCode = stock.symbol.charCodeAt(0) || 65;
+  const variance = (charCode % 5) * 0.02; // deterministic jitter
+  
+  let liabRatio;
+  if (isFinance) {
+    liabRatio = 0.82 + variance + (pe < 15 ? 0.05 : 0);
+  } else {
+    // Higher P/B implies asset light (less debt)
+    liabRatio = Math.max(0.15, Math.min(0.60, 0.45 - (pb * 0.02) + variance));
+  }
+
+  const totalLiab    = (totalAssets * liabRatio).toFixed(2);
   const debtEquity   = (totalLiab / (totalAssets - totalLiab)).toFixed(2);
   const cashBal      = (revenue * 0.15).toFixed(2);
 
