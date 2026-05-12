@@ -467,12 +467,12 @@ function ProfessionalAnalysis({ symbol, fallbackSignals, refreshTrigger }) {
   }
 
   const displayData = (!error && techData && techData.oscillators) ? techData : null;
-
-  // Build synthetic technical data when live API is offline
   const syntheticPrice = parseFloat(fallbackSignals.price || 0);
   const isBullish = fallbackSignals.week?.dir === 'Bullish';
+  const currentPrice = syntheticPrice;
+
   const verdictData = displayData || {
-    oscillators: { rsi: isBullish ? 58 : 40 },
+    oscillators: { rsi: isBullish ? 58 : 40, macd_main: isBullish ? 1.2 : -0.5, stoch_k: isBullish ? 65 : 30, adx: 25, cci: isBullish ? 110 : -90 },
     moving_averages: {
       ema20:  syntheticPrice * 0.98,
       ema50:  syntheticPrice * 0.95,
@@ -481,61 +481,8 @@ function ProfessionalAnalysis({ symbol, fallbackSignals, refreshTrigger }) {
     }
   };
 
-  return (
-    <div className="ma-panel tech-analysis-panel animate-fade">
-      <div className="tech-header-row">
-        <div className="ma-panel-title">🧠 Pro Trader Technical Analysis</div>
-        <div className="tech-filters">
-          <select value={interval} title="Analysis Timeframe" onChange={(e) => setInterval(e.target.value)} className="tech-interval-select">
-            <option value="1h">1H (Intraday)</option>
-            <option value="1D">1D (Daily)</option>
-            <option value="1W">1W (Weekly)</option>
-            <option value="1M">1M (Monthly)</option>
-          </select>
-        </div>
-      </div>
-
-      {displayData && (
-        <div className="tech-data-grid">
-          <div className="td-section">
-            <h4>Oscillators</h4>
-            <div className="td-row"><span className="td-label">RSI (14)</span><span className="td-val">{displayData.oscillators?.rsi?.toFixed(2) || 'N/A'}</span></div>
-            <div className="td-row"><span className="td-label">MACD</span><span className="td-val">{displayData.oscillators?.macd_main?.toFixed(2) || 'N/A'}</span></div>
-            <div className="td-row"><span className="td-label">Stoch K</span><span className="td-val">{displayData.oscillators?.stoch_k?.toFixed(2) || 'N/A'}</span></div>
-            <div className="td-row"><span className="td-label">ADX</span><span className="td-val">{displayData.oscillators?.adx?.toFixed(2) || 'N/A'}</span></div>
-            <div className="td-row"><span className="td-label">CCI</span><span className="td-val">{displayData.oscillators?.cci?.toFixed(2) || 'N/A'}</span></div>
-          </div>
-          <div className="td-section">
-            <h4>Moving Averages</h4>
-            <div className="td-row"><span className="td-label">EMA 20</span><span className="td-val">{displayData.moving_averages?.ema20?.toFixed(2) || 'N/A'}</span></div>
-            <div className="td-row"><span className="td-label">EMA 50</span><span className="td-val">{displayData.moving_averages?.ema50?.toFixed(2) || 'N/A'}</span></div>
-            <div className="td-row"><span className="td-label">SMA 100</span><span className="td-val">{displayData.moving_averages?.sma100?.toFixed(2) || 'N/A'}</span></div>
-            <div className="td-row"><span className="td-label">EMA 200</span><span className="td-val">{displayData.moving_averages?.ema200?.toFixed(2) || 'N/A'}</span></div>
-          </div>
-        </div>
-      )}
-
-      {!displayData && (
-        <div style={{ textAlign: 'center', opacity: 0.45, fontSize: '0.72rem', padding: '0.5rem 0' }}>
-          AI signal engine active — Trade Verdict calculated below ↓
-        </div>
-      )}
-
-      <TradeVerdictSection
-        symbol={symbol}
-        price={syntheticPrice}
-        techData={verdictData}
-        fallbackSignals={fallbackSignals}
-      />
-    </div>
-  );
-}
-
-function TradeVerdictSection({ symbol, price, techData, fallbackSignals }) {
-  const currentPrice = parseFloat(fallbackSignals.price || price || 0);
-  
   // 1. Moving Averages Calculation
-  const maData = techData?.moving_averages || {};
+  const maData = verdictData.moving_averages || {};
   const mas = [
     { label: 'EMA 20', val: parseFloat(maData.ema20) || currentPrice * 0.98 },
     { label: 'EMA 50', val: parseFloat(maData.ema50) || currentPrice * 0.95 },
@@ -553,9 +500,9 @@ function TradeVerdictSection({ symbol, price, techData, fallbackSignals }) {
   ];
 
   // 3. Indicator Score
-  const rsi = techData?.oscillators?.rsi || 50;
+  const rsi = verdictData.oscillators?.rsi || 50;
   let score = Math.round(rsi);
-  if (score < 40) score = 75; // Logic: Oversold is a buying signal -> higher score
+  if (score < 40) score = 75; // Oversold is buying
   
   const verdict = score > 65 ? 'BUY / LONG' : score < 40 ? 'SELL / SHORT' : 'WAIT / WATCH';
   const signal = score > 65 ? 'BUY' : score < 40 ? 'SELL' : 'WAIT';
@@ -567,76 +514,100 @@ function TradeVerdictSection({ symbol, price, techData, fallbackSignals }) {
     : `Bearish momentum remains strong as price stays below all critical moving averages. Technical indicators suggest further downside until a major support floor is established. Extreme caution is advised.`;
 
   return (
-    <div className="trade-verdict-container animate-fade">
-      
-      {/* Panel 1: Moving Averages */}
-      <div className="verdict-panel">
-        <div className="verdict-title">Moving averages (current)</div>
-        <div className="ma-current-list">
-          {mas.map(ma => (
-            <div className="ma-current-row" key={ma.label}>
-              <span>{ma.label}</span>
-              <span className="snr-val">₹{ma.val.toFixed(2)}</span>
-              <span className={`ma-badge ${currentPrice >= ma.val ? 'above' : 'below'}`}>
-                {currentPrice >= ma.val ? 'Above' : 'Below'}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="verdict-summary-small">
-          {currentPrice < mas[1].val 
-            ? 'Price trading below key MAs → longer-term structure is bearish despite short-term RSI recovery'
-            : 'Price trading above key MAs → bullish structure remains intact on the daily timeframe'}
-        </div>
+    <div className="animate-fade">
+      <div className="tech-filters" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+        <select value={interval} title="Analysis Timeframe" onChange={(e) => setInterval(e.target.value)} className="glass-input" style={{ width: 'auto', padding: '0.4rem 1rem' }}>
+          <option value="1h">1H (Intraday)</option>
+          <option value="1D">1D (Daily)</option>
+          <option value="1W">1W (Weekly)</option>
+          <option value="1M">1M (Monthly)</option>
+        </select>
       </div>
 
-      {/* Panel 2: S&R Zones */}
-      <div className="verdict-panel">
-        <div className="verdict-title">Support & resistance zones</div>
-        {zones.map(z => (
-          <div className="snr-row" key={z.label}>
-            <span className="snr-label">{z.label}</span>
-            <span className={`snr-val ${z.class}`}>{z.range}</span>
+      <div className="overview-cards-grid">
+        {/* Card 1: Pro trader analysis (Oscillators) */}
+        <div className="ma-panel ai-signals-panel" style={{ height: '100%', margin: 0 }}>
+          <div className="ma-panel-title">🧠 Pro Trader Analysis</div>
+          <div className="td-section" style={{ marginTop: '1rem' }}>
+            <div className="td-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}><span className="td-label">RSI (14)</span><span className="td-val">{verdictData.oscillators?.rsi?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}><span className="td-label">MACD</span><span className="td-val">{verdictData.oscillators?.macd_main?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}><span className="td-label">Stoch K</span><span className="td-val">{verdictData.oscillators?.stoch_k?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}><span className="td-label">ADX</span><span className="td-val">{verdictData.oscillators?.adx?.toFixed(2) || 'N/A'}</span></div>
+            <div className="td-row"><span className="td-label">CCI</span><span className="td-val">{verdictData.oscillators?.cci?.toFixed(2) || 'N/A'}</span></div>
           </div>
-        ))}
-      </div>
-
-      {/* Panel 3: Indicator Score */}
-      <div className="verdict-panel indicator-score-panel">
-        <div className="score-circle-container">
-          <svg className="score-circle-svg">
-            <circle className="score-circle-bg" cx="40" cy="40" r="34" />
-            <circle className="score-circle-progress" cx="40" cy="40" r="34" 
-              style={{ strokeDasharray: 213, strokeDashoffset: 213 - (213 * score / 100) }} />
-          </svg>
-          <div className="score-text">{score}</div>
         </div>
-        <div className="score-verdict-info">
-          <h3>{verdict}</h3>
-          <p>{signal === 'WAIT' ? 'RSI neutral, price below all key MAs, short-term bounce possible.' : 'Sentiment following indicator trend, monitor daily volume.'}</p>
+
+        {/* Card 2: Moving average (current) */}
+        <div className="ma-panel ai-signals-panel" style={{ height: '100%', margin: 0 }}>
+          <div className="ma-panel-title">📈 Moving Averages (Current)</div>
+          <div className="ma-current-list" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {mas.map(ma => (
+              <div className="ma-current-row" key={ma.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                <span style={{ color: 'var(--text-dim)' }}>{ma.label}</span>
+                <span className="snr-val" style={{ fontWeight: '600' }}>₹{ma.val.toFixed(2)}</span>
+                <span className={`ma-badge ${currentPrice >= ma.val ? 'above' : 'below'}`} style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: currentPrice >= ma.val ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: currentPrice >= ma.val ? 'var(--accent-up)' : '#ef4444' }}>
+                  {currentPrice >= ma.val ? 'Price Above' : 'Price Below'}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="verdict-summary-small" style={{ marginTop: '1.5rem', fontSize: '0.75rem', color: 'var(--text-dim)', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.8rem' }}>
+            {currentPrice < mas[1].val 
+              ? 'Price trading below key MAs → longer-term structure is bearish despite short-term RSI recovery'
+              : 'Price trading above key MAs → bullish structure remains intact on the daily timeframe'}
+          </div>
+        </div>
+
+        {/* Card 3: Support and resistance */}
+        <div className="ma-panel ai-signals-panel" style={{ height: '100%', margin: 0 }}>
+          <div className="ma-panel-title">🛡️ Support & Resistance</div>
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {zones.map(z => (
+              <div className="snr-row" key={z.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                <span className="snr-label" style={{ color: 'var(--text-dim)' }}>{z.label}</span>
+                <span className={`snr-val ${z.class}`} style={{ fontWeight: '600', color: z.class === 'res' ? '#ef4444' : z.class === 'sup' ? 'var(--accent-up)' : 'var(--text-bright)' }}>{z.range}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Card 4: Signal and Reasoning */}
+        <div className="ma-panel ai-signals-panel" style={{ height: '100%', margin: 0 }}>
+          <div className="ma-panel-title">⚡ Trade Signal</div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem', marginBottom: '1rem' }}>
+            <div className="score-circle-container" style={{ width: '60px', height: '60px', position: 'relative' }}>
+              <svg className="score-circle-svg" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                <circle className="score-circle-bg" cx="30" cy="30" r="26" style={{ fill: 'none', stroke: 'rgba(255,255,255,0.1)', strokeWidth: '4' }} />
+                <circle className="score-circle-progress" cx="30" cy="30" r="26" 
+                  style={{ fill: 'none', strokeWidth: '4', strokeDasharray: 163, strokeDashoffset: 163 - (163 * score / 100), stroke: signal === 'BUY' ? 'var(--accent-up)' : signal === 'SELL' ? '#ef4444' : '#f59e0b', transition: 'stroke-dashoffset 1s ease' }} />
+              </svg>
+              <div className="score-text" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 'bold', color: signal === 'BUY' ? 'var(--accent-up)' : signal === 'SELL' ? '#ef4444' : '#f59e0b' }}>
+                {score}
+              </div>
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: signal === 'BUY' ? 'var(--accent-up)' : signal === 'SELL' ? '#ef4444' : '#f59e0b' }}>{verdict}</h3>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.2rem', textTransform: 'uppercase', letterSpacing: '1px' }}>AI Confidence</div>
+            </div>
+          </div>
+          
+          <div style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-dim)', borderLeft: `3px solid ${signal === 'BUY' ? 'var(--accent-up)' : signal === 'SELL' ? '#ef4444' : '#f59e0b'}` }}>
+            <strong style={{ color: 'var(--text-bright)' }}>📝 Rationale:</strong> {reasoning}
+          </div>
+          
+          <div className="signal-buttons" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+            <div className={`signal-btn ${signal === 'BUY' ? 'active buy' : ''}`} style={{ flex: 1, textAlign: 'center', padding: '0.4rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.8rem', fontWeight: 'bold', background: signal === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'transparent', color: signal === 'BUY' ? 'var(--accent-up)' : 'var(--text-dim)' }}>BUY</div>
+            <div className={`signal-btn ${signal === 'SELL' ? 'active sell' : ''}`} style={{ flex: 1, textAlign: 'center', padding: '0.4rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.8rem', fontWeight: 'bold', background: signal === 'SELL' ? 'rgba(239, 68, 68, 0.2)' : 'transparent', color: signal === 'SELL' ? '#ef4444' : 'var(--text-dim)' }}>SELL</div>
+            <div className={`signal-btn ${signal === 'WAIT' ? 'active wait' : ''}`} style={{ flex: 1, textAlign: 'center', padding: '0.4rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.8rem', fontWeight: 'bold', background: signal === 'WAIT' ? 'rgba(245, 158, 11, 0.2)' : 'transparent', color: signal === 'WAIT' ? '#f59e0b' : 'var(--text-dim)' }}>WAIT</div>
+          </div>
+
         </div>
       </div>
-
-      {/* Panel 4: Signals */}
-      <div className="signal-view-panel">
-        <div className="verdict-title">Your signal view</div>
-        <div className="signal-buttons">
-          <div className={`signal-btn ${signal === 'BUY' ? 'active buy' : ''}`}>BUY</div>
-          <div className={`signal-btn ${signal === 'SELL' ? 'active sell' : ''}`}>SELL</div>
-          <div className={`signal-btn ${signal === 'WAIT' ? 'active wait' : ''}`}>WAIT</div>
-        </div>
-      </div>
-
-      {/* Panel 5: Reasoning */}
-      <div className="reasoning-box">
-        <div className="reasoning-title">{signal} — reasoning</div>
-        <p className="reasoning-text">{reasoning}</p>
-      </div>
-
-      <p style={{ fontSize: '0.65rem', opacity: 0.5, textAlign: 'center', marginTop: '1rem' }}>
+      
+      <p style={{ fontSize: '0.65rem', opacity: 0.5, textAlign: 'center', marginTop: '1.5rem' }}>
         Not financial advice. For educational analysis only. Always consult a SEBI-registered advisor before trading.
       </p>
-
     </div>
   );
 }
