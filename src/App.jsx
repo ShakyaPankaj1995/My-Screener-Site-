@@ -349,15 +349,7 @@ const App = () => {
 function formatAmount(val) {
   const num = parseFloat(val);
   if (isNaN(num)) return 'N/A';
-  // If > 100L Cr, we'll call it Trillion? 
-  // User wants "Thousand (K) Crore" and "Lakh Crores".
-  // 1.0 Lakh Cr = 100,000 Crore.
-  // Usually in India: < 1 Lakh Cr is just X,XXX Crore.
-  // 15,000 Crore = 15K Crore.
-  if (num >= 100) {
-     return `₹${(num/100).toFixed(2)} Lakh Crores`;
-  }
-  return `₹${(num).toFixed(0)}K Crores`;
+  return `₹${num.toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr`;
 }
 
 function deriveStats(stock) {
