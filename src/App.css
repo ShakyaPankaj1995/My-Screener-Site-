@@ -1380,3 +1380,16 @@ dhtml, body { overflow-x: hidden; position: relative; width: 100%; }
   color: white;
 }
 
+
+.overview-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+@media (min-width: 1024px) {
+  .overview-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
